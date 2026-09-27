@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
+  const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState(initialMode); // 'login' or 'signup'
   const [mobileNumber, setMobileNumber] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -13,7 +15,23 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
   const [ageGroup, setAgeGroup] = useState('25-34');
   const [referralCode, setReferralCode] = useState('');
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, initialMode]);
+
+  if (!isOpen || !mounted) return null;
 
   const handleOtpChange = (index, value) => {
     if (value.length > 1) return;
@@ -51,31 +69,37 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-md animate-fadeIn">
-      {/* FLOATING GLASS CONTAINER */}
-      <div className="bg-white/95 backdrop-blur-2xl rounded-[32px] overflow-hidden max-w-5xl w-full border border-white/60 shadow-2xl grid grid-cols-1 md:grid-cols-12 relative animate-scaleUp">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-xl animate-fadeIn overflow-y-auto"
+      onClick={onClose}
+    >
+      {/* FLOATING GLASS CONTAINER (CENTERED & CONSTRAINED) */}
+      <div
+        className="bg-white/95 backdrop-blur-2xl rounded-[28px] sm:rounded-[32px] overflow-hidden max-w-4xl lg:max-w-5xl w-full border border-white/60 shadow-2xl grid grid-cols-1 md:grid-cols-12 relative animate-scaleUp my-auto max-h-[85vh] sm:max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* CLOSE BUTTON */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer shadow-md"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900/60 hover:bg-slate-900 text-white backdrop-blur-md flex items-center justify-center transition-all cursor-pointer shadow-md"
           title="Close Dialog"
         >
-          <span className="material-symbols-outlined text-[20px]">close</span>
+          <span className="material-symbols-outlined text-[18px] sm:text-[20px]">close</span>
         </button>
 
         {/* =========================================================================
             LEFT COLUMN: FORM SECTION (LOGIN & SIGNUP SIDE-BY-SIDE TOGGLE)
            ========================================================================= */}
-        <div className="md:col-span-7 p-6 sm:p-8 lg:p-10 flex flex-col justify-between bg-white/90 space-y-6 overflow-y-auto max-h-[90vh]">
+        <div className="md:col-span-7 p-5 sm:p-8 lg:p-10 flex flex-col justify-between bg-white/90 space-y-4 sm:space-y-6 overflow-y-auto max-h-[85vh] sm:max-h-[90vh] no-scrollbar">
           
           {/* Header & Logo */}
           <div>
-            <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center justify-between gap-4 mb-3 sm:mb-4">
               <div className="flex items-center gap-2">
-                <img src="/images/logo.png" alt="VedBus Logo" className="h-8 w-auto object-contain" />
+                <img src="/images/logo.png" alt="VedBus Logo" className="h-7 sm:h-8 w-auto object-contain" />
               </div>
 
               {/* Mode Toggle Switcher */}
@@ -83,7 +107,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
                 <button
                   type="button"
                   onClick={() => { setMode('login'); setIsOtpSent(false); }}
-                  className={`px-4 py-1.5 rounded-full font-bold text-xs transition-all ${
+                  className={`px-3.5 sm:px-4 py-1.5 rounded-full font-bold text-[11px] sm:text-xs transition-all ${
                     mode === 'login'
                       ? 'bg-brand-scarlet text-white shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
@@ -94,7 +118,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
                 <button
                   type="button"
                   onClick={() => { setMode('signup'); setIsOtpSent(false); }}
-                  className={`px-4 py-1.5 rounded-full font-bold text-xs transition-all ${
+                  className={`px-3.5 sm:px-4 py-1.5 rounded-full font-bold text-[11px] sm:text-xs transition-all ${
                     mode === 'signup'
                       ? 'bg-brand-scarlet text-white shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
@@ -107,12 +131,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
 
             {mode === 'login' ? (
               <>
-                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Login to your account</h2>
+                <h2 className="text-xl sm:text-3xl font-serif font-bold text-slate-900">Login to your account</h2>
                 <p className="text-xs text-slate-500 mt-1">Enter your mobile number to continue with VedBus</p>
               </>
             ) : (
               <>
-                <h2 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900">Create your VedBus Account</h2>
+                <h2 className="text-xl sm:text-3xl font-serif font-bold text-slate-900">Create your VedBus Account</h2>
                 <p className="text-xs text-slate-500 mt-1">Join thousands of travellers exploring India with comfort &amp; safety.</p>
               </>
             )}
@@ -167,7 +191,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
                       maxLength={1}
                       value={digit}
                       onChange={(e) => handleOtpChange(idx, e.target.value)}
-                      className="w-full h-11 text-center font-black text-slate-900 text-lg bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-scarlet focus:bg-white outline-none transition-all"
+                      className="w-full h-10 sm:h-11 text-center font-black text-slate-900 text-base sm:text-lg bg-slate-50 border border-slate-200 rounded-xl focus:border-brand-scarlet focus:bg-white outline-none transition-all"
                     />
                   ))}
                 </div>
@@ -176,14 +200,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
               {/* Primary Action Button */}
               <button
                 type="submit"
-                className="w-full min-h-[48px] rounded-2xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full min-h-[46px] rounded-2xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>{isOtpSent ? 'Verify & Continue' : 'Send Login OTP'}</span>
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
               </button>
 
               {/* Social Login Divider */}
-              <div className="relative my-4 text-center">
+              <div className="relative my-3 text-center">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
                 <span className="relative bg-white px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">OR</span>
               </div>
@@ -193,7 +217,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
                 <button
                   type="button"
                   onClick={() => alert('Redirecting to Google Auth...')}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold text-xs shadow-sm transition-all cursor-pointer"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -207,7 +231,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
                 <button
                   type="button"
                   onClick={() => alert('Sending WhatsApp OTP...')}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-bold text-xs shadow-sm transition-all cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 sm:py-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-bold text-xs shadow-sm transition-all cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px] text-emerald-600">send_to_mobile</span>
                   <span>WhatsApp</span>
@@ -215,7 +239,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
               </div>
 
               {/* Mode Switcher Link */}
-              <div className="text-center pt-2">
+              <div className="text-center pt-1">
                 <button
                   type="button"
                   onClick={() => setMode('signup')}
@@ -335,7 +359,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
               {/* Primary Signup Button */}
               <button
                 type="submit"
-                className="w-full min-h-[46px] rounded-xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer mt-2"
+                className="w-full min-h-[44px] rounded-xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-red-600/20 flex items-center justify-center gap-2 cursor-pointer mt-1"
               >
                 <span className="material-symbols-outlined text-[18px]">person_add</span>
                 <span>Create VedBus Account</span>
@@ -355,7 +379,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
           )}
 
           {/* BOTTOM TRUST BADGES */}
-          <div className="pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
+          <div className="pt-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
             <div className="flex flex-col items-center">
               <span className="material-symbols-outlined text-emerald-600 text-[18px]">verified_user</span>
               <span className="text-[10px] font-bold text-slate-700 mt-0.5">Safe &amp; Secure</span>
@@ -374,7 +398,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
         {/* =========================================================================
             RIGHT COLUMN: HERO BACKGROUND IMAGE & FEATURE BADGES
            ========================================================================= */}
-        <div className="md:col-span-5 relative hidden md:flex flex-col justify-between p-8 text-white overflow-hidden bg-slate-950">
+        <div className="md:col-span-5 relative hidden md:flex flex-col justify-between p-6 sm:p-8 text-white overflow-hidden bg-slate-950 max-h-[85vh] sm:max-h-[90vh]">
           <img
             src="/images/domestic-hero.jpg"
             alt="VedBus Luxury Coach on Expressway"
@@ -391,8 +415,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
           </div>
 
           {/* Middle Headline */}
-          <div className="relative z-10 space-y-3">
-            <h3 className="text-2xl lg:text-3xl font-serif font-bold text-white leading-tight">
+          <div className="relative z-10 space-y-2.5">
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-serif font-bold text-white leading-tight">
               {mode === 'login' ? 'Comfortable Journeys for a Brighter Bharat' : 'Explore India in Greater Comfort'}
             </h3>
             <div className="w-12 h-1 bg-brand-scarlet rounded-full" />
@@ -407,7 +431,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
               <span className="material-symbols-outlined text-amber-400 text-[18px]">directions_bus</span>
               <span>Luxury Sleeper Coaches</span>
             </div>
-            <div className="flex flex-center items-center gap-2">
+            <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-emerald-400 text-[18px]">map</span>
               <span>Pan India Routes</span>
             </div>
@@ -423,6 +447,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
