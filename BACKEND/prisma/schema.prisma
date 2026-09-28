@@ -1,0 +1,158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Models ─────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  phone           String           @unique
+  passwordHash    String
+  role            Role             @default(USER)
+  createdAt       DateTime         @default(now())
+  
+  busBookings     BusBooking[]
+  packageBookings PackageBooking[]
+  supportTickets  SupportTicket[]
+}
+
+enum BusStatus {
+  Active
+  In_Maintenance
+  Retired
+}
+
+model Bus {
+  id           String    @id @default(uuid())
+  plateNumber  String    @unique
+  type         String
+  totalSeats   Int
+  amenities    Json
+  status       BusStatus @default(Active)
+  lastServiced DateTime?
+  busStyle     String?
+
+  trips        Trip[]
+}
+
+model Route {
+  id             String   @id @default(uuid())
+  originCity     String
+  destinationCity String
+  waypoints      String[]
+  distanceKm     Int
+
+  trips          Trip[]
+}
+
+enum TripStatus {
+  Scheduled
+  On_Time
+  Delayed
+  Completed
+  Cancelled
+}
+
+model Trip {
+  id               String     @id @default(uuid())
+  busId            String
+  routeId          String
+  departureDatetime DateTime
+  arrivalDatetime   DateTime
+  baseFare         Decimal    @db.Decimal(10, 2)
+  status           TripStatus @default(Scheduled)
+
+  bus              Bus        @relation(fields: [busId], references: [id])
+  route            Route      @relation(fields: [routeId], references: [id])
+  bookings         BusBooking[]
+}
+
+enum BookingStatus {
+  Pending
+  Confirmed
+  Cancelled
+  Refunded
+}
+
+model BusBooking {
+  id           String        @id
+  userId       String
+  tripId       String
+  seatNumbers  String[]
+  totalAmount  Decimal       @db.Decimal(10, 2)
+  status       BookingStatus @default(Pending)
+  bookingDate  DateTime      @default(now())
+
+  user         User          @relation(fields: [userId], references: [id])
+  trip         Trip          @relation(fields: [tripId], references: [id])
+}
+
+enum PackageCategory {
+  Domestic
+  International
+  Spiritual
+}
+
+model TourPackage {
+  id             String          @id @default(uuid())
+  title          String
+  category       PackageCategory
+  pricePerPerson Decimal         @db.Decimal(10, 2)
+  durationDays   Int
+  itinerary      Json
+  isActive       Boolean         @default(true)
+
+  bookings       PackageBooking[]
+}
+
+model PackageBooking {
+  id             String        @id @default(uuid())
+  userId         String
+  packageId      String
+  travelersCount Int
+  travelDate     DateTime
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  status         BookingStatus @default(Pending)
+
+  user           User          @relation(fields: [userId], references: [id])
+  package        TourPackage   @relation(fields: [packageId], references: [id])
+}
+
+model Offer {
+  id                  String   @id @default(uuid())
+  code                String   @unique
+  discountPercentage  Int
+  maxDiscountAmount   Decimal  @db.Decimal(10, 2)
+  validUntil          DateTime
+  isActive            Boolean  @default(true)
+}
+
+enum TicketStatus {
+  Open
+  In_Progress
+  Resolved
+  Closed
+}
+
+model SupportTicket {
+  id        String       @id @default(uuid())
+  userId    String
+  subject   String
+  message   String
+  status    TicketStatus @default(Open)
+  createdAt DateTime     @default(now())
+
+  user      User         @relation(fields: [userId], references: [id])
+}

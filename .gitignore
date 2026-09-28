@@ -1,0 +1,17 @@
+# Internal Documentation & PRD Files (Not committed to GitHub)
+frontend.md
+PRD.md
+*.md.tmp
+BACKEND.md
+ADMIN.md
+
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+.DS_Store
+.env*
+
+VedBus_Admin_Panel_Blueprint.pdf
