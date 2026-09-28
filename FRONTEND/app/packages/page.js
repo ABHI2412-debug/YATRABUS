@@ -178,10 +178,31 @@ export default function CuratedPackagesMasterPage() {
   const [selectedPkg, setSelectedPkg] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [spiritualPackagesData, setSpiritualPackagesData] = useState([]);
+  const [internationalPackagesData, setInternationalPackagesData] = useState([]);
+  const [domesticPackagesData, setDomesticPackagesData] = useState([]);
+
   const [scrollScale, setScrollScale] = useState(1);
   const [textY, setTextY] = useState(0);
   const [textOpacity, setTextOpacity] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/packages');
+        if (res.ok) {
+          const data = await res.json();
+          setSpiritualPackagesData(data.filter(p => p.category === 'Spiritual'));
+          setInternationalPackagesData(data.filter(p => p.category === 'International'));
+          setDomesticPackagesData(data.filter(p => p.category === 'Domestic'));
+        }
+      } catch (err) {
+        console.error('Failed to fetch packages:', err);
+      }
+    };
+    fetchPackages();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 60);
@@ -222,9 +243,9 @@ export default function CuratedPackagesMasterPage() {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      pkg.title.toLowerCase().includes(q) ||
-      pkg.destinations.toLowerCase().includes(q) ||
-      pkg.description.toLowerCase().includes(q)
+      (pkg.title && pkg.title.toLowerCase().includes(q)) ||
+      (pkg.destinations && pkg.destinations.toLowerCase().includes(q)) ||
+      (pkg.description && pkg.description.toLowerCase().includes(q))
     );
   };
 

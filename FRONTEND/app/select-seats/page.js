@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/site/Header';
@@ -131,12 +131,21 @@ function CinemaSeatBookingContent() {
   const [filterLadiesOnly, setFilterLadiesOnly] = useState(false);
   const [filterSoloWindow, setFilterSoloWindow] = useState(false);
 
-  // Pre-select first available seats based on bus type
-  const [selectedSeats, setSelectedSeats] = useState(
-    isSleeper
-      ? [sleeperLowerDeck.find(s => s.id === 'L1') || sleeperLowerDeck[0]]
-      : [seater2x2Seats.find(s => s.id === '3A') || seater2x2Seats[0]]
-  );
+  const [selectedSeats, setSelectedSeats] = useState([]);
+
+  // Live booked seats fetched from API
+  const [bookedSeatIds, setBookedSeatIds] = useState([]);
+  
+  useEffect(() => {
+    fetch(`http://localhost:5000/api/bookings/seats?busId=${busInfo.id}&date=${busInfo.date}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.bookedSeats) {
+          setBookedSeatIds(data.bookedSeats);
+        }
+      })
+      .catch(console.error);
+  }, [busInfo.id, busInfo.date]);
 
   const [boardingPoint, setBoardingPoint] = useState({
     id: 'b1',
@@ -254,11 +263,7 @@ function CinemaSeatBookingContent() {
             <button
               onClick={() => {
                 setLayoutMode('seater');
-                setSelectedSeats([
-                  seater2x2Seats.find(s => s.id === '3A'),
-                  seater2x2Seats.find(s => s.id === '3B'),
-                  seater2x2Seats.find(s => s.id === '4A'),
-                ]);
+                setSelectedSeats([]);
               }}
               className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
                 layoutMode === 'seater'
@@ -554,7 +559,7 @@ function CinemaSeatBookingContent() {
   // RENDER SEATER SEAT CARD (Matching exact graphic in reference image)
   function renderSeaterCard(seat) {
     const selected = isSeatSelected(seat.id);
-    const isBooked = seat.status === 'booked';
+    const isBooked = seat.status === 'booked' || bookedSeatIds.includes(seat.id);
     const isFemale = seat.status === 'female';
     const isSoloWindow = seat.isSolo && filterSoloWindow;
     const isHighlightedFemale = filterLadiesOnly && isFemale;
@@ -600,7 +605,7 @@ function CinemaSeatBookingContent() {
   // RENDER SLEEPER BERTH CARD
   function renderSleeperCard(seat) {
     const selected = isSeatSelected(seat.id);
-    const isBooked = seat.status === 'booked';
+    const isBooked = seat.status === 'booked' || bookedSeatIds.includes(seat.id);
     const isFemale = seat.status === 'female';
     const isSoloWindow = seat.isSolo && filterSoloWindow;
     const isHighlightedFemale = filterLadiesOnly && isFemale;

@@ -1,0 +1,10 @@
+{
+  "name": "yatrabus-monorepo",
+  "version": "1.0.0",
+  "description": "Root workspace to run all Yatrabus applications concurrently",
+  "scripts": {
+    "dev": "npx concurrently \"npm run dev --prefix FRONTEND\" \"npm run dev --prefix admin\" \"npm run dev --prefix BACKEND\""
+  },
+  "author": "",
+  "license": "ISC"
+}

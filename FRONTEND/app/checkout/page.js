@@ -61,14 +61,40 @@ export default function CheckoutPage() {
     setPassengers(updated);
   };
 
-  const handlePayNow = (e) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handlePayNow = async (e) => {
     e.preventDefault();
-    const newId = `YB-${Math.floor(100000 + Math.random() * 900000)}`;
-    setCreatedTicketId(newId);
+    setIsProcessing(true);
+    
+    let finalTicketId = `YB-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Call our Express backend API
+    try {
+      const response = await fetch("http://localhost:5000/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          busId: bookingData?.busId || 'dummy-bus',
+          date: bookingData?.date || new Date().toISOString(),
+          selectedSeats: passengers.map(p => ({ id: p.seat, name: p.seat })),
+          totalAmount: grandTotal
+        })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        finalTicketId = data.booking.id;
+      }
+    } catch (err) {
+      console.error("Failed to call backend:", err);
+    }
+
+    setCreatedTicketId(finalTicketId);
 
     if (typeof window !== 'undefined') {
       const newTrip = {
-        id: newId,
+        id: finalTicketId,
         operator: bookingData?.operator || 'VRL Travels Express',
         busType: bookingData?.busType || 'Volvo B11R AC Sleeper',
         busPlate: bookingData?.busPlate || 'MH-12-QZ-8812',
@@ -101,6 +127,7 @@ export default function CheckoutPage() {
       }
     }
 
+    setIsProcessing(false);
     setIsSuccessModalOpen(true);
   };
 
@@ -551,10 +578,11 @@ export default function CheckoutPage() {
             {/* CONFIRMATION PAY BUTTON */}
             <button
               onClick={handlePayNow}
-              className="w-full py-4 rounded-2xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              disabled={isProcessing}
+              className={`w-full py-4 rounded-2xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] ${isProcessing ? 'opacity-75 cursor-not-allowed' : ''}`}
             >
               <span className="material-symbols-outlined text-[18px]">lock</span>
-              <span>PAY ₹{grandTotal} &amp; CONFIRM TICKET</span>
+              <span>{isProcessing ? 'PROCESSING...' : `PAY ₹${grandTotal} & CONFIRM TICKET`}</span>
             </button>
 
             <div className="text-[11px] text-slate-400 text-center leading-relaxed">
