@@ -142,23 +142,6 @@ function SearchContent() {
   });
   const [passengerCount, setPassengerCount] = useState(1);
 
-  const fetchBuses = async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/buses/search?from=${encodeURIComponent(fromCity)}&to=${encodeURIComponent(toCity)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setBuses(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch buses:', err);
-    }
-  };
-
-  React.useEffect(() => {
-    fetchBuses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const [isFromOpen, setIsFromOpen] = useState(false);
   const [isToOpen, setIsToOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -402,7 +385,6 @@ function SearchContent() {
               type="button"
               onClick={() => {
                 closeAllDropdowns();
-                fetchBuses();
                 triggerToast(`Buses refreshed for ${fromCity} ➔ ${toCity}`);
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"

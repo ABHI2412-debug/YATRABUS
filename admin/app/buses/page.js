@@ -1,13 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 
-// Buses will be fetched from API
-// const BUSES = [...] removed
+const BUSES = [
+  { plate: "MH 31 AB 1234", type: "Volvo AC (Sleeper)",     seats: 40, amenities: { wifi: true,  charging: true,  blanket: true,  gps: true  }, status: "Active",         serviced: "12 Aug 2026", busStyle: "silver" },
+  { plate: "MH 40 CD 5678", type: "Scania AC (Sleeper)",    seats: 42, amenities: { wifi: true,  charging: true,  blanket: true,  gps: true  }, status: "Active",         serviced: "28 Jul 2026", busStyle: "red"    },
+  { plate: "MH 31 EF 9012", type: "Mercedes AC (Seater)",   seats: 49, amenities: { wifi: true,  charging: true,  blanket: false, gps: true  }, status: "In Maintenance", serviced: "02 Sep 2026", busStyle: "silver" },
+  { plate: "MH 49 GH 3456", type: "Tata AC (Seater)",       seats: 52, amenities: { wifi: true,  charging: false, blanket: true,  gps: true  }, status: "Active",         serviced: "18 Aug 2026", busStyle: "red"    },
+  { plate: "MH 12 IJ 7890", type: "Ashok Leyland (Seater)", seats: 45, amenities: { wifi: true,  charging: true,  blanket: false, gps: false }, status: "Retired",        serviced: "10 Jun 2026", busStyle: "silver" },
+  { plate: "MH 31 KL 4321", type: "Volvo AC (Seater)",      seats: 48, amenities: { wifi: true,  charging: true,  blanket: true,  gps: true  }, status: "Active",         serviced: "25 Aug 2026", busStyle: "red"    },
+  { plate: "MH 14 MN 6789", type: "BharatBenz (Seater)",    seats: 50, amenities: { wifi: true,  charging: false, blanket: true,  gps: true  }, status: "In Maintenance", serviced: "05 Sep 2026", busStyle: "silver" },
+  { plate: "MH 31 OP 2468", type: "Eicher (Seater)",        seats: 45, amenities: { wifi: true,  charging: true,  blanket: false, gps: true  }, status: "Active",         serviced: "30 Aug 2026", busStyle: "red"    },
+  { plate: "MH 40 QR 1357", type: "Volvo AC (Sleeper)",     seats: 40, amenities: { wifi: true,  charging: true,  blanket: true,  gps: true  }, status: "Active",         serviced: "16 Aug 2026", busStyle: "silver" },
+  { plate: "MH 12 ST 9753", type: "Scania AC (Sleeper)",    seats: 42, amenities: { wifi: true,  charging: true,  blanket: true,  gps: true  }, status: "Active",         serviced: "21 Aug 2026", busStyle: "red"    },
+];
 
 const STATS = [
   { label: "Total Buses",    value: "48", icon: "directions_bus", bg: "#EFF6FF", color: "#2563EB", change: "+12%", comp: "vs last month", up: true  },
@@ -90,36 +100,11 @@ const TH = {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function BusesPage() {
-  const [buses, setBuses] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search,       setSearch]       = useState("");
   const [typeFilter,   setTypeFilter]   = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");
 
-  useEffect(() => {
-    fetch("http://localhost:5000/api/buses")
-      .then(res => res.json())
-      .then(data => {
-        // Map database fields to the UI fields expected
-        const mappedBuses = data.map(b => ({
-          plate: b.plateNumber,
-          type: b.type,
-          seats: b.totalSeats,
-          amenities: b.amenities,
-          status: b.status === "In_Maintenance" ? "In Maintenance" : b.status,
-          serviced: b.lastServiced ? new Date(b.lastServiced).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : "N/A",
-          busStyle: b.busStyle || "silver"
-        }));
-        setBuses(mappedBuses);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to fetch buses:", err);
-        setIsLoading(false);
-      });
-  }, []);
-
-  const filtered = buses.filter(b => {
+  const filtered = BUSES.filter(b => {
     const q = search.toLowerCase();
     const matchSearch = !q || b.plate.toLowerCase().includes(q) || b.type.toLowerCase().includes(q);
     const matchType   = typeFilter === "All Types"   || b.type.toLowerCase().includes(typeFilter.toLowerCase());
@@ -248,11 +233,7 @@ export default function BusesPage() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                <tr><td colSpan={7} style={{ padding: "2rem", textAlign: "center", color: "#64748B" }}>Loading buses from API...</td></tr>
-              ) : filtered.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: "2rem", textAlign: "center", color: "#64748B" }}>No buses found.</td></tr>
-              ) : filtered.map((b, idx) => (
+              {filtered.map((b, idx) => (
                 <tr
                   key={b.plate}
                   style={{ borderBottom: idx < filtered.length - 1 ? "1px solid #F8FAFC" : "none" }}

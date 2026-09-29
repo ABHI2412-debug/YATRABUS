@@ -178,31 +178,10 @@ export default function CuratedPackagesMasterPage() {
   const [selectedPkg, setSelectedPkg] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [spiritualPackagesData, setSpiritualPackagesData] = useState([]);
-  const [internationalPackagesData, setInternationalPackagesData] = useState([]);
-  const [domesticPackagesData, setDomesticPackagesData] = useState([]);
-
   const [scrollScale, setScrollScale] = useState(1);
   const [textY, setTextY] = useState(0);
   const [textOpacity, setTextOpacity] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/packages');
-        if (res.ok) {
-          const data = await res.json();
-          setSpiritualPackagesData(data.filter(p => p.category === 'Spiritual'));
-          setInternationalPackagesData(data.filter(p => p.category === 'International'));
-          setDomesticPackagesData(data.filter(p => p.category === 'Domestic'));
-        }
-      } catch (err) {
-        console.error('Failed to fetch packages:', err);
-      }
-    };
-    fetchPackages();
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 60);
@@ -243,9 +222,9 @@ export default function CuratedPackagesMasterPage() {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      (pkg.title && pkg.title.toLowerCase().includes(q)) ||
-      (pkg.destinations && pkg.destinations.toLowerCase().includes(q)) ||
-      (pkg.description && pkg.description.toLowerCase().includes(q))
+      pkg.title.toLowerCase().includes(q) ||
+      pkg.destinations.toLowerCase().includes(q) ||
+      pkg.description.toLowerCase().includes(q)
     );
   };
 
@@ -275,10 +254,11 @@ export default function CuratedPackagesMasterPage() {
         <div
           className="max-w-[1800px] w-full mx-auto relative z-10 text-center"
           style={{
-            transform: `translateY(${textY * 0.8 - 70}px)`,
-            opacity: textOpacity,
-            pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
-            transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
+            transform: `translateY(${isLoaded ? textY * 0.8 - 70 : -70}px)`,
+            opacity: isLoaded ? textOpacity : 0,
+            transition: isLoaded && textY > 0
+              ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+              : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out'
           }}
         >
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 font-bold text-xs uppercase tracking-wider mb-3 sm:mb-4 border border-white/15 shadow-sm">

@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import DatePickerPopover from '@/components/ui/DatePickerPopover';
 
 export default function IndiaLocalHero() {
-  const router = useRouter();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState({
     mainText: 'Nov - Dec 2026',
@@ -70,10 +68,11 @@ export default function IndiaLocalHero() {
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
           <div
             style={{
-              transform: `translateY(${textY * 0.7}px)`,
-              opacity: textOpacity,
-              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
-              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
+              transform: `translateY(${isLoaded ? textY * 0.7 : 20}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s, opacity 0.8s ease-out 0.05s'
             }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-amber-200 text-xs font-semibold tracking-wider uppercase mb-5 shadow-lg shadow-teal-950/30"
           >
@@ -81,10 +80,11 @@ export default function IndiaLocalHero() {
           </div>
           <h1
             style={{
-              transform: `translateY(${textY}px)`,
-              opacity: textOpacity,
-              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
-              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
+              transform: `translateY(${isLoaded ? textY : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, opacity 0.9s ease-out 0.2s'
             }}
             className="font-serif text-4xl sm:text-6xl lg:text-7xl font-medium tracking-tight text-white max-w-5xl leading-[1.15] drop-shadow-[0_4px_25px_rgba(0,0,0,0.8)]"
           >
@@ -95,10 +95,11 @@ export default function IndiaLocalHero() {
           </h1>
           <p
             style={{
-              transform: `translateY(${textY * 0.85}px)`,
-              opacity: textOpacity,
-              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
-              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
+              transform: `translateY(${isLoaded ? textY * 0.85 : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s, opacity 0.9s ease-out 0.35s'
             }}
             className="mt-5 text-base sm:text-lg text-slate-200 max-w-3xl font-light leading-relaxed drop-shadow-md"
           >
@@ -106,10 +107,11 @@ export default function IndiaLocalHero() {
           </p>
           <div
             style={{
-              transform: `translateY(${textY * 0.7}px)`,
-              opacity: textOpacity,
-              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
-              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
+              transform: `translateY(${isLoaded ? textY * 0.7 : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s, opacity 0.9s ease-out 0.45s'
             }}
             className="mt-8 flex flex-wrap items-center justify-center gap-4"
           >
@@ -138,8 +140,8 @@ export default function IndiaLocalHero() {
       {/* FLOATING SEARCH WIDGET */}
       <div
         style={{
-          transform: `translateY(0px)`,
-          opacity: 1,
+          transform: `translateY(${isLoaded ? 0 : 45}px)`,
+          opacity: isLoaded ? 1 : 0,
           transition: 'transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.55s, opacity 1s ease-out 0.55s'
         }}
         className="relative -mt-20 z-30 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
@@ -208,11 +210,7 @@ export default function IndiaLocalHero() {
               </div>
             </div>
             <div className="flex items-center">
-              <button 
-                type="button"
-                onClick={() => router.push('/packages')}
-                className="w-full h-full min-h-[52px] bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
-              >
+              <button className="w-full h-full min-h-[52px] bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"></path>
                 </svg>

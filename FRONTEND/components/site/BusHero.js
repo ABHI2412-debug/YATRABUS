@@ -133,7 +133,18 @@ export default function BusHero() {
         {/* ULTRA-TRANSPARENT GLASS SEARCH BAR CAPSULE */}
         <div className="w-full max-w-6xl">
           <div className={`rounded-full p-1 sm:p-2 md:py-2 md:pl-4 md:pr-4 bg-white/[0.07] backdrop-blur-md border border-white/15 shadow-2xl ${isDatePickerOpen ? 'overflow-visible' : 'overflow-hidden'}`}>
-            <div className="flex flex-row items-center justify-between w-full">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const params = new URLSearchParams({
+                  from: fromCity.trim() || 'Nagpur',
+                  to: toCity.trim() || 'Pune',
+                  date: selectedDate.mainText,
+                });
+                router.push(`/search?${params.toString()}`);
+              }}
+              className="flex flex-row items-center justify-between w-full"
+            >
               {/* 1. FROM FIELD */}
               <div className="flex-1 min-w-0 px-1 sm:px-2 md:px-3 lg:px-4 py-1 sm:py-2 md:py-2.5 flex items-center gap-1 sm:gap-2 md:gap-3">
                 <span className="material-symbols-outlined text-amber-300 text-[15px] sm:text-[20px] md:text-[24px] shrink-0">
@@ -241,15 +252,7 @@ export default function BusHero() {
               {/* 5. SEARCH BUTTON */}
               <div className="shrink-0 p-0.5 sm:p-1">
                 <button
-                  type="button"
-                  onClick={() => {
-                    const params = new URLSearchParams({
-                      from: fromCity.trim() || 'Nagpur',
-                      to: toCity.trim() || 'Pune',
-                      date: selectedDate.mainText,
-                    });
-                    router.push(`/search?${params.toString()}`);
-                  }}
+                  type="submit"
                   className="w-8 h-8 sm:w-9 sm:h-9 md:w-auto md:px-7 md:py-3.5 rounded-full bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center md:gap-2 shadow-lg md:shadow-xl md:shadow-red-600/35 hover:scale-[1.03] active:scale-95 cursor-pointer shrink-0"
                   title="Search buses"
                 >
@@ -257,7 +260,7 @@ export default function BusHero() {
                   <span className="hidden md:inline">SEARCH</span>
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>
