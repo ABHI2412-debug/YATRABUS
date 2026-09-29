@@ -5,12 +5,15 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
+import AuthModal from './AuthModal';
 
 export default function Header() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
 
   useEffect(() => {
     setMounted(true);
@@ -322,6 +325,19 @@ export default function Header() {
                   <span>Edit Profile &amp; Settings</span>
                 </Link>
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    setAuthMode('login');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-brand-scarlet/90 hover:bg-brand-scarlet shadow-sm transition-all text-left cursor-pointer my-1"
+                >
+                  <span className="material-symbols-outlined text-[18px]">lock</span>
+                  <span>Log In / Sign Up</span>
+                </button>
+
                 <div className="border-t border-white/10 my-1" />
 
                 <button
@@ -588,6 +604,12 @@ export default function Header() {
         </div>,
         document.body
       )}
+      {/* AUTH MODAL DIALOG */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authMode}
+      />
     </header>
   );
 }

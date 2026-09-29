@@ -1,9 +1,7 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
-import { authenticateJWT, AuthRequest } from '../middleware/auth';
+import { prisma } from '../prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // GET all active offers
 router.get('/', async (req, res) => {

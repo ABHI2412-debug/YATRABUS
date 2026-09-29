@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DatePickerPopover from '@/components/ui/DatePickerPopover';
 
 export default function InternationalHero() {
+  const router = useRouter();
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState({
     mainText: 'Nov - Dec 2026',
@@ -71,11 +73,10 @@ export default function InternationalHero() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
           <div
             style={{
-              transform: `translateY(${isLoaded ? textY * 0.7 : 20}px)`,
-              opacity: isLoaded ? textOpacity : 0,
-              transition: isLoaded && textY > 0
-                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
-                : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s, opacity 0.8s ease-out 0.05s'
+              transform: `translateY(${textY * 0.7}px)`,
+              opacity: textOpacity,
+              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
+              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
             }}
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-teal-200 font-bold text-xs uppercase tracking-wider mb-4 border border-white/30 shadow-lg shadow-teal-950/30"
           >
@@ -85,11 +86,10 @@ export default function InternationalHero() {
 
           <h1
             style={{
-              transform: `translateY(${isLoaded ? textY : 35}px)`,
-              opacity: isLoaded ? textOpacity : 0,
-              transition: isLoaded && textY > 0
-                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
-                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, opacity 0.9s ease-out 0.2s'
+              transform: `translateY(${textY}px)`,
+              opacity: textOpacity,
+              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
+              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
             }}
             className="text-4xl md:text-6xl lg:text-7xl text-white tracking-tight leading-tight mb-4 max-w-4xl mx-auto drop-shadow-[0_4px_25px_rgba(0,0,0,0.8)] font-serif font-medium"
           >
@@ -99,11 +99,10 @@ export default function InternationalHero() {
 
           <p
             style={{
-              transform: `translateY(${isLoaded ? textY * 0.85 : 35}px)`,
-              opacity: isLoaded ? textOpacity : 0,
-              transition: isLoaded && textY > 0
-                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
-                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s, opacity 0.9s ease-out 0.35s'
+              transform: `translateY(${textY * 0.85}px)`,
+              opacity: textOpacity,
+              pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
+              transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
             }}
             className="text-base md:text-lg text-slate-100 max-w-2xl mx-auto mb-8 font-medium drop-shadow-md leading-relaxed"
           >
@@ -137,6 +136,7 @@ export default function InternationalHero() {
               <div className="flex-1 min-w-0">
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Destination</label>
                 <input
+                  id="intl-destination"
                   className="w-full bg-transparent font-bold text-slate-900 text-sm outline-none p-0 border-0 focus:ring-0"
                   defaultValue="Dubai & Abu Dhabi"
                   type="text"
@@ -187,7 +187,11 @@ export default function InternationalHero() {
             <div className="md:col-span-2">
               <button
                 className="w-full min-h-[56px] rounded-2xl bg-teal-600 hover:bg-teal-700 text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-wider uppercase shadow-lg shadow-teal-600/30"
-                type="submit"
+                type="button"
+                onClick={() => {
+                  const dest = document.getElementById('intl-destination')?.value || 'Dubai';
+                  router.push(`/packages`);
+                }}
               >
                 <span className="material-symbols-outlined text-[18px]">search</span>
                 <span>SEARCH</span>

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../prisma';
+import { authenticateJWT } from '../middleware/auth';
 
 const router = Router();
 
@@ -100,17 +101,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST to book a package
-router.post('/book', async (req, res) => {
+router.post('/book', authenticateJWT, async (req: any, res) => {
   try {
     const { packageId, travelersCount, travelDate, totalAmount } = req.body;
-    let userId = (req as any).user?.id;
+    let userId = req.user?.id;
     
     if (!userId) {
-      const fallbackUser = await prisma.user.findFirst();
-      if (fallbackUser) userId = fallbackUser.id;
+      return res.status(401).json({ error: 'Authentication required to book packages' });
     }
 
-    if (!packageId || !travelersCount || !travelDate || !userId) {
+    if (!packageId || !travelersCount || !travelDate) {
       return res.status(400).json({ error: 'Missing booking details' });
     }
 

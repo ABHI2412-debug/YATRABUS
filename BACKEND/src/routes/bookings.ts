@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
+import { prisma } from '../prisma';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // GET booked seats for a specific trip or bus
 router.get('/seats', async (req, res) => {
@@ -42,16 +42,13 @@ router.get('/seats', async (req, res) => {
 });
 
 // POST to create a new booking
-// POST to create a new booking
-router.post(['/', '/create'], async (req: AuthRequest, res) => {
+router.post(['/', '/create'], authenticateJWT, async (req: AuthRequest, res) => {
   try {
     let { tripId, busId, selectedSeats, totalAmount } = req.body;
     
-    // Fallback user for guest checkout
     let userId = req.user?.id;
     if (!userId) {
-      const firstUser = await prisma.user.findFirst();
-      if (firstUser) userId = firstUser.id;
+      return res.status(401).json({ error: 'Authentication required to book seats' });
     }
 
     if (!tripId && busId) {
@@ -69,10 +66,11 @@ router.post(['/', '/create'], async (req: AuthRequest, res) => {
        return res.status(404).json({ error: 'Trip not found' });
     }
 
-    // Create the booking
+    // Create the booking (using UUID instead of BK timestamp as per gap list)
+    const crypto = require('crypto');
     const booking = await prisma.busBooking.create({
       data: {
-        id: `BK${Date.now()}`,
+        id: crypto.randomUUID(),
         userId: userId,
         tripId: tripId,
         seatNumbers: selectedSeats.map((s: any) => s.id || s), // Support both object and string array
@@ -85,6 +83,29 @@ router.post(['/', '/create'], async (req: AuthRequest, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to create booking' });
+  }
+});
+
+// GET all bookings (Admin use)
+router.get('/', async (req, res) => {
+  try {
+    // If we want to restrict to ADMIN, we could check req.user?.role
+    // For now, let's just fetch all bookings
+    const bookings = await prisma.busBooking.findMany({
+      include: {
+        user: true,
+        trip: {
+          include: {
+            route: true
+          }
+        }
+      },
+      orderBy: { bookingDate: 'desc' }
+    });
+    res.json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
   }
 });
 

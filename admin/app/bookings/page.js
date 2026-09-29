@@ -1,24 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import DateRangePicker from "@/components/ui/DateRangePicker";
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-
-const BOOKINGS = [
-  { id: "BK100523", user: "Rahul Sharma",    phone: "+91 98765 43210", initials: "RS", color: "#2563EB", from: "Nagpur",  to: "Pune",      via: "Wardha, Amravati", date: "15 Sep 2026", day: "Mon", seats: ["L3", "L4"],       amount: "₹ 2,400", status: "Confirmed" },
-  { id: "BK100522", user: "Sneha Patil",     phone: "+91 87654 32109", initials: "SP", color: "#D97706", from: "Pune",    to: "Mumbai",    via: "Lonavala",         date: "15 Sep 2026", day: "Mon", seats: ["U1"],             amount: "₹ 1,200", status: "Pending"   },
-  { id: "BK100521", user: "Amit Verma",      phone: "+91 98980 12345", initials: "AV", color: "#059669", from: "Nagpur",  to: "Hyderabad", via: "Adilabad",         date: "16 Sep 2026", day: "Tue", seats: ["L5", "L6", "L7"], amount: "₹ 3,600", status: "Confirmed" },
-  { id: "BK100520", user: "Priya Deshmukh",  phone: "+91 76543 21098", initials: "PD", color: "#DC2626", from: "Mumbai",  to: "Nagpur",    via: "Nashik",           date: "16 Sep 2026", day: "Tue", seats: ["U3"],             amount: "₹ 1,800", status: "Cancelled" },
-  { id: "BK100519", user: "Karan Mehta",     phone: "+91 99887 76654", initials: "KM", color: "#0284C7", from: "Bhopal",  to: "Indore",    via: "Sehore",           date: "17 Sep 2026", day: "Wed", seats: ["L1", "L2"],       amount: "₹ 1,600", status: "Confirmed" },
-  { id: "BK100518", user: "Neha Singh",      phone: "+91 91234 56789", initials: "NS", color: "#7C3AED", from: "Pune",    to: "Bangalore", via: "Hubli, Dharwad",   date: "17 Sep 2026", day: "Wed", seats: ["U7", "U8"],       amount: "₹ 2,200", status: "Refunded"  },
-  { id: "BK100517", user: "Vikram Joshi",    phone: "+91 90123 45678", initials: "VJ", color: "#16A34A", from: "Delhi",   to: "Nagpur",    via: "Jhansi",           date: "18 Sep 2026", day: "Thu", seats: ["L9"],             amount: "₹ 1,100", status: "Confirmed" },
-  { id: "BK100516", user: "Ananya Rao",      phone: "+91 93456 78901", initials: "AR", color: "#EA580C", from: "Nagpur",  to: "Goa",       via: "Hyderabad",        date: "18 Sep 2026", day: "Thu", seats: ["U4", "U5"],       amount: "₹ 2,800", status: "Pending"   },
-  { id: "BK100515", user: "Siddharth Kumar", phone: "+91 98712 34567", initials: "SK", color: "#0D9488", from: "Mumbai",  to: "Pune",      via: "Lonavala",         date: "19 Sep 2026", day: "Fri", seats: ["L10"],            amount: "₹ 900",   status: "Confirmed" },
-  { id: "BK100514", user: "Pooja Nair",      phone: "+91 87621 99876", initials: "PN", color: "#E11D48", from: "Indore",  to: "Nagpur",    via: "Betul",            date: "19 Sep 2026", day: "Fri", seats: ["U1", "U2", "U3"], amount: "₹ 3,000", status: "Cancelled" },
-];
+// ── Dynamic Bookings State ───────────────────────────────────────────────────
 
 const STATS = [
   { label: "Total Bookings", value: "1,248", icon: "confirmation_number", bg: "#EFF6FF", color: "#2563EB", change: "+ 12%", comp: "vs last month", up: true },
@@ -41,8 +28,52 @@ export default function BusBookingsPage() {
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
   const [routeFilter, setRouteFilter] = useState("All Routes");
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = BOOKINGS.filter(b => {
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/bookings", {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("adminToken") || localStorage.getItem("token") || ""}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const colors = ["#2563EB", "#D97706", "#059669", "#DC2626", "#0284C7", "#7C3AED", "#16A34A", "#EA580C", "#0D9488", "#E11D48"];
+          const formatted = data.map((b, i) => {
+             const tripDate = b.trip?.departureDatetime ? new Date(b.trip.departureDatetime) : new Date();
+             const userName = b.user?.name || "Guest";
+             return {
+                id: "BK" + b.id.substring(0, 6).toUpperCase(), // Display shortened ID
+                realId: b.id,
+                user: userName,
+                phone: b.user?.phone || "N/A",
+                initials: userName.substring(0, 2).toUpperCase(),
+                color: colors[i % colors.length],
+                from: b.trip?.route?.originCity || "Unknown",
+                to: b.trip?.route?.destinationCity || "Unknown",
+                via: (b.trip?.route?.waypoints || []).join(", ") || "-",
+                date: tripDate.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+                day: tripDate.toLocaleDateString("en-GB", { weekday: "short" }),
+                seats: b.seatNumbers || [],
+                amount: `₹ ${Number(b.totalAmount || 0).toLocaleString()}`,
+                status: b.status || "Pending"
+             };
+          });
+          setBookings(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch bookings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, []);
+
+  const filtered = bookings.filter(b => {
     const matchTab = activeTab === "All" || b.status === activeTab;
     const q = search.toLowerCase();
     const matchSearch = !q || b.id.toLowerCase().includes(q) || b.user.toLowerCase().includes(q) || b.phone.includes(q);
@@ -185,11 +216,11 @@ export default function BusBookingsPage() {
         {/* Tab Badges */}
         <div style={{ padding: "0 1.25rem 0.875rem", display: "flex", gap: "0.5rem", borderBottom: "1px solid #F1F5F9" }}>
           {[
-            { label: "All (1,248)",       key: "All",       color: "#B91C1C", bg: "#B91C1C" },
-            { label: "Confirmed (892)",   key: "Confirmed", dot: "#16A34A" },
-            { label: "Pending (124)",     key: "Pending",   dot: "#D97706" },
-            { label: "Cancelled (142)",   key: "Cancelled", dot: "#DC2626" },
-            { label: "Refunded (90)",     key: "Refunded",  dot: "#7C3AED" },
+            { label: `All (${bookings.length})`,       key: "All",       color: "#B91C1C", bg: "#B91C1C" },
+            { label: `Confirmed (${bookings.filter(b=>b.status==="Confirmed").length})`,   key: "Confirmed", dot: "#16A34A" },
+            { label: `Pending (${bookings.filter(b=>b.status==="Pending").length})`,     key: "Pending",   dot: "#D97706" },
+            { label: `Cancelled (${bookings.filter(b=>b.status==="Cancelled").length})`,   key: "Cancelled", dot: "#DC2626" },
+            { label: `Refunded (${bookings.filter(b=>b.status==="Refunded").length})`,     key: "Refunded",  dot: "#7C3AED" },
           ].map(tab => {
             const isSelected = activeTab === tab.key;
             return (
@@ -231,8 +262,21 @@ export default function BusBookingsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((b, idx) => {
-                const s = STATUS_MAP[b.status];
+              {loading ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: "2rem", textAlign: "center", color: "#64748B" }}>
+                    Loading bookings...
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ padding: "2rem", textAlign: "center", color: "#64748B" }}>
+                    No bookings found.
+                  </td>
+                </tr>
+              ) : filtered.map((b, idx) => {
+                const s = STATUS_MAP[b.status] || STATUS_MAP["Pending"];
+
                 return (
                   <tr
                     key={b.id}
@@ -309,7 +353,8 @@ export default function BusBookingsPage() {
                     <td style={{ padding: "0.875rem 0.875rem" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.375rem" }}>
                         <Link
-                          href={`/bookings/${b.id}`}
+                          href={`/bookings/${b.realId}`}
+
                           style={{
                             display: "inline-flex", alignItems: "center", gap: "0.25rem",
                             padding: "0.3rem 0.625rem", borderRadius: 6,
@@ -345,8 +390,9 @@ export default function BusBookingsPage() {
           flexWrap: "wrap", gap: "0.75rem"
         }}>
           <span style={{ fontSize: "0.8125rem", color: "#64748B" }}>
-            Showing 1 to 10 of 1,248 bookings
+            Showing {filtered.length} bookings
           </span>
+
           <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
             <button style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B" }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>

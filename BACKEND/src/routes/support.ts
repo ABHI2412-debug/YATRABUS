@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../prisma';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // GET user's support tickets
 router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
@@ -23,16 +22,13 @@ router.get('/', authenticateJWT, async (req: AuthRequest, res) => {
 });
 
 // POST to create a new support ticket
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', authenticateJWT, async (req: AuthRequest, res) => {
   try {
-    let { subject, message, email } = req.body;
-    let userId = req.user?.id;
+    const { subject, message } = req.body;
+    const userId = req.user?.id;
     
     if (!userId) {
-       // if not logged in, try to find user by email or fallback
-       const user = email ? await prisma.user.findUnique({ where: { email } }) : await prisma.user.findFirst();
-       if (user) userId = user.id;
-       else return res.status(400).json({ error: 'User not found or email missing' });
+      return res.status(401).json({ error: 'Authentication required to create a support ticket' });
     }
 
     if (!subject || !message) {

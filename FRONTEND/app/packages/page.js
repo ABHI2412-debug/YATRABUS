@@ -275,11 +275,10 @@ export default function CuratedPackagesMasterPage() {
         <div
           className="max-w-[1800px] w-full mx-auto relative z-10 text-center"
           style={{
-            transform: `translateY(${isLoaded ? textY * 0.8 - 70 : -70}px)`,
-            opacity: isLoaded ? textOpacity : 0,
-            transition: isLoaded && textY > 0
-              ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
-              : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out'
+            transform: `translateY(${textY * 0.8 - 70}px)`,
+            opacity: textOpacity,
+            pointerEvents: textOpacity < 0.05 ? 'none' : 'auto',
+            transition: textY > 0 ? 'transform 0.1s ease-out, opacity 0.1s ease-out' : undefined
           }}
         >
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-amber-300 font-bold text-xs uppercase tracking-wider mb-3 sm:mb-4 border border-white/15 shadow-sm">

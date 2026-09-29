@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../prisma';
+import { authenticateJWT, isAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -108,7 +109,7 @@ router.get('/search', async (req, res) => {
 });
 
 // POST to create a new bus (admin only ideally)
-router.post('/', async (req, res) => {
+router.post('/', authenticateJWT, isAdmin, async (req, res) => {
   try {
     const { plateNumber, type, totalSeats, amenities, busStyle } = req.body;
     
