@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DatePickerPopover from '@/components/ui/DatePickerPopover';
 
 export default function IndiaLocalHero() {
+  const router = useRouter();
+  const [destination, setDestination] = useState('Goa');
+  const [departureFrom, setDepartureFrom] = useState('Mumbai');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState({
     mainText: 'Nov - Dec 2026',
@@ -147,29 +151,138 @@ export default function IndiaLocalHero() {
         className="relative -mt-20 z-30 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         data-purpose="search-and-fixed-departures"
       >
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
+    const query = destination.trim() || 'Goa';
+    router.push(`/packages?category=Domestic&q=${encodeURIComponent(query)}`);
+  };
+
+  return (
+    <>
+      {/* 1. HERO BANNER */}
+      <section className="relative min-h-[580px] lg:min-h-[640px] flex items-center justify-center overflow-hidden pb-20 pt-10 sticky top-0 z-0" id="hero">
+        <div className="absolute inset-0 z-0">
+          <img
+            alt="India Local Scenic Highway Banner"
+            className="w-full h-full object-cover object-center will-change-transform transition-transform duration-100 ease-out"
+            style={{ transform: `scale(${scrollScale})` }}
+            src="/images/vedbus_india_local_holiday_travel_packages_1.jpg"
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/60 to-teal-900/40 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
+          <div
+            style={{
+              transform: `translateY(${isLoaded ? textY * 0.7 : 20}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s, opacity 0.8s ease-out 0.05s'
+            }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/20 backdrop-blur-md text-teal-200 font-bold text-xs uppercase tracking-wider mb-4 border border-teal-400/30 shadow-lg shadow-teal-950/40"
+          >
+            <span className="material-symbols-outlined text-[16px] text-teal-300">landscape</span>
+            BHARAT &amp; DOMESTIC HOLIDAY PACKAGES
+          </div>
+
+          <h1
+            style={{
+              transform: `translateY(${isLoaded ? textY : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, opacity 0.9s ease-out 0.2s'
+            }}
+            className="text-3xl md:text-5xl lg:text-6xl text-white tracking-tight leading-tight mb-4 max-w-4xl mx-auto drop-shadow-[0_4px_25px_rgba(0,0,0,0.8)] font-serif font-medium"
+          >
+            Discover Beautiful Bharat in <span className="bg-gradient-to-r from-teal-200 via-emerald-200 to-teal-100 bg-clip-text text-transparent font-serif font-medium">Greater Comfort</span>
+          </h1>
+
+          <p
+            style={{
+              transform: `translateY(${isLoaded ? textY * 0.85 : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s, opacity 0.9s ease-out 0.35s'
+            }}
+            className="text-base md:text-lg text-teal-100/90 max-w-2xl mx-auto mb-8 font-medium drop-shadow-md leading-relaxed"
+          >
+            Curated holiday packages across coastal retreats, serene backwaters, and misty Himalayan valleys with luxury sleeper coach connectivity.
+          </p>
+
+          <div
+            style={{
+              transform: `translateY(${isLoaded ? textY * 0.7 : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s, opacity 0.9s ease-out 0.45s'
+            }}
+            className="mt-8 flex flex-wrap items-center justify-center gap-4"
+          >
+            <a
+              className="px-7 py-3.5 bg-teal-700 hover:bg-teal-600 text-white font-bold rounded-full shadow-lg hover:shadow-teal-700/40 transition duration-200 flex items-center gap-2 text-sm tracking-wide"
+              href="#curated-packages"
+            >
+              Explore Domestic Getaways
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+              </svg>
+            </a>
+            <a
+              className="px-6 py-3.5 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white font-semibold rounded-full border border-white/30 transition duration-200 flex items-center gap-2 text-sm"
+              href="#how-it-works"
+            >
+              <svg className="w-4 h-4 text-amber-300" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path>
+              </svg>
+              How It Works
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FLOATING SEARCH WIDGET */}
+      <div
+        style={{
+          transform: `translateY(${isLoaded ? 0 : 45}px)`,
+          opacity: isLoaded ? 1 : 0,
+          transition: 'transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.55s, opacity 1s ease-out 0.55s'
+        }}
+        className="relative -mt-20 z-30 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+        data-purpose="search-and-fixed-departures"
+      >
         <div className="bg-white rounded-2xl shadow-custom-card border border-slate-100 p-4 sm:p-6 lg:p-7 backdrop-blur">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="border border-slate-200 rounded-xl p-3 hover:border-teal-600 transition flex items-center gap-3">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="border border-slate-200 rounded-xl p-3 hover:border-teal-600 focus-within:border-teal-600 transition flex items-center gap-3">
               <div className="text-teal-700 text-xl pl-1">📍</div>
               <div className="flex-1 min-w-0">
                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Destination</span>
                 <input
-                  className="w-full text-xs font-bold text-slate-800 p-0 border-0 focus:ring-0 truncate cursor-pointer bg-transparent"
-                  readOnly
+                  className="w-full text-xs font-bold text-slate-800 p-0 border-0 focus:ring-0 truncate bg-transparent outline-none"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  placeholder="Goa, Kerala, Himachal..."
                   type="text"
-                  defaultValue="Goa, Kerala, Himachal, Kashmir..."
                 />
               </div>
             </div>
-            <div className="border border-slate-200 rounded-xl p-3 hover:border-teal-600 transition flex items-center gap-3">
+            <div className="border border-slate-200 rounded-xl p-3 hover:border-teal-600 focus-within:border-teal-600 transition flex items-center gap-3">
               <div className="text-teal-700 text-xl pl-1">🚌</div>
               <div className="flex-1 min-w-0">
                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Departure From</span>
                 <input
-                  className="w-full text-xs font-bold text-slate-800 p-0 border-0 focus:ring-0 truncate cursor-pointer bg-transparent"
-                  readOnly
+                  className="w-full text-xs font-bold text-slate-800 p-0 border-0 focus:ring-0 truncate bg-transparent outline-none"
+                  value={departureFrom}
+                  onChange={(e) => setDepartureFrom(e.target.value)}
+                  placeholder="Mumbai, Pune, Delhi..."
                   type="text"
-                  defaultValue="Mumbai, Pune, Delhi, Bangalore..."
                 />
               </div>
             </div>
@@ -202,7 +315,7 @@ export default function IndiaLocalHero() {
               <div className="flex-1 min-w-0">
                 <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Travelers</span>
                 <input
-                  className="w-full text-xs font-bold text-slate-800 p-0 border-0 focus:ring-0 truncate cursor-pointer bg-transparent"
+                  className="w-full text-xs font-bold text-slate-800 p-0 border-0 focus:ring-0 truncate bg-transparent outline-none"
                   readOnly
                   type="text"
                   defaultValue="2 Adults, 1 Room"
@@ -210,14 +323,14 @@ export default function IndiaLocalHero() {
               </div>
             </div>
             <div className="flex items-center">
-              <button className="w-full h-full min-h-[52px] bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition">
+              <button type="submit" className="w-full h-full min-h-[52px] bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5"></path>
                 </svg>
                 <span className="text-sm">Search Holidays</span>
               </button>
             </div>
-          </div>
+          </form>
           <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2 text-slate-500 font-semibold">
               <span className="text-teal-700">⚡</span>

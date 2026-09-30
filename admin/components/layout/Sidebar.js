@@ -54,29 +54,48 @@ export default function Sidebar({ isOpen, onClose }) {
         }}
       >
         {/* Logo & Mobile Close */}
-        <div style={{ padding: "1.25rem 1rem 1.125rem", borderBottom: "1px solid #1E293B", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
+        <div style={{ padding: "0.875rem 1rem", borderBottom: "1px solid #1E293B", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link
+            href="/dashboard"
+            onClick={() => { if (onClose) onClose(); }}
+            style={{ display: "flex", alignItems: "center", gap: "0.625rem", textDecoration: "none" }}
+          >
             <div style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: "linear-gradient(135deg, #B91C1C, #991B1B)",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              backgroundColor: "#FFFFFF",
+              borderRadius: 8,
+              padding: "0.25rem 0.5rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
               flexShrink: 0,
             }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 20, color: "#fff" }}>directions_bus</span>
+              <img
+                src="/logo.png"
+                alt="VedBus Logo"
+                style={{
+                  height: 32,
+                  width: "auto",
+                  maxWidth: 105,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
             </div>
             <div>
-              <div style={{ fontSize: "1rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1.1, letterSpacing: "-0.01em" }}>
-                <span style={{ color: "#B91C1C" }}>Ved</span>Bus
+              <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#FFFFFF", lineHeight: 1.1, letterSpacing: "-0.01em" }}>
+                Admin
               </div>
-              <div style={{ fontSize: "0.625rem", color: "#475569", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 1 }}>
-                Admin Portal
+              <div style={{ fontSize: "0.5625rem", color: "#94A3B8", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: 1 }}>
+                Portal
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Close button on mobile */}
           <button
             onClick={onClose}
+            aria-label="Close sidebar"
             style={{
               background: "none", border: "none", color: "#94A3B8", cursor: "pointer",
               display: "flex", padding: 4

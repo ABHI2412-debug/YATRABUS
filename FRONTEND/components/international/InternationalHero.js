@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DatePickerPopover from '@/components/ui/DatePickerPopover';
 
 export default function InternationalHero() {
+  const router = useRouter();
+  const [destination, setDestination] = useState('Dubai & Abu Dhabi');
+  const [departureFrom, setDepartureFrom] = useState('Mumbai (BOM)');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState({
     mainText: 'Nov - Dec 2026',
@@ -131,14 +135,111 @@ export default function InternationalHero() {
       {/* 3. FLOATING SEARCH BAR */}
       <div className="relative z-20 mx-auto px-4 sm:px-6 -mt-14 mb-12 max-w-7xl lg:px-8 w-full">
         <div className="bg-white rounded-3xl shadow-2xl p-3 md:p-4 border border-slate-200/80">
-          <form className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 items-center" onSubmit={(e) => e.preventDefault()}>
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
+    const query = destination.trim() || 'Dubai';
+    router.push(`/packages?category=International&q=${encodeURIComponent(query)}`);
+  };
+
+  return (
+    <>
+      {/* 2. REFRESHING SUNLIT OCEAN HERO */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pb-24 pt-12 sticky top-0 z-0" id="hero">
+        <div className="absolute inset-0 z-0">
+          <img
+            alt="Breathtaking sunlit turquoise ocean and mountains"
+            className="w-full h-full object-cover object-center will-change-transform transition-transform duration-100 ease-out"
+            style={{ transform: `scale(${scrollScale})` }}
+            src="/images/vedbus_international_holiday_travel_packages_1.jpg"
+            fetchPriority="high"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/75 via-slate-950/50 to-teal-900/30 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 to-transparent"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center">
+          <div
+            style={{
+              transform: `translateY(${isLoaded ? textY * 0.7 : 20}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.05s, opacity 0.8s ease-out 0.05s'
+            }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-500/20 backdrop-blur-md text-teal-200 font-bold text-xs uppercase tracking-wider mb-4 border border-teal-400/30 shadow-lg shadow-teal-950/40"
+          >
+            <span className="material-symbols-outlined text-[16px] text-teal-300">flight_takeoff</span>
+            WORLDWIDE CURATED HOLIDAY PACKAGES
+          </div>
+
+          <h1
+            style={{
+              transform: `translateY(${isLoaded ? textY : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s, opacity 0.9s ease-out 0.2s'
+            }}
+            className="text-3xl md:text-5xl lg:text-6xl text-white tracking-tight leading-tight mb-4 max-w-4xl mx-auto drop-shadow-[0_4px_25px_rgba(0,0,0,0.8)] font-serif font-medium"
+          >
+            Personalized Global Holidays with <span className="bg-gradient-to-r from-teal-200 via-emerald-200 to-teal-100 bg-clip-text text-transparent font-serif font-medium">Indian Culinary</span> &amp; Visa Assurance
+          </h1>
+
+          <p
+            style={{
+              transform: `translateY(${isLoaded ? textY * 0.85 : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.35s, opacity 0.9s ease-out 0.35s'
+            }}
+            className="text-base md:text-lg text-teal-100/90 max-w-2xl mx-auto mb-8 font-medium drop-shadow-md leading-relaxed"
+          >
+            Handpicked 5★ luxury stays, 100% authentic Indian &amp; Jain meal spreads worldwide, 24-hour visa processing concierge, and verified local transfers.
+          </p>
+
+          <div
+            style={{
+              transform: `translateY(${isLoaded ? textY * 0.7 : 35}px)`,
+              opacity: isLoaded ? textOpacity : 0,
+              transition: isLoaded && textY > 0
+                ? 'transform 0.1s ease-out, opacity 0.1s ease-out'
+                : 'transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.45s, opacity 0.9s ease-out 0.45s'
+            }}
+            className="flex flex-wrap items-center justify-center gap-3 sm:gap-4"
+          >
+            <a
+              className="px-7 py-3 rounded-full bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-teal-600/30 flex items-center gap-2"
+              href="#packages"
+            >
+              <span>Explore Destinations</span>
+              <span className="material-symbols-outlined text-[16px]">arrow_downward</span>
+            </a>
+            <a
+              className="px-6 py-3 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white border border-white/30 font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2"
+              href="#howItWorks"
+            >
+              <span className="material-symbols-outlined text-[16px]">play_circle</span>
+              <span>How It Works</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. FLOATING SEARCH BAR */}
+      <div className="relative z-20 mx-auto px-4 sm:px-6 -mt-14 mb-12 max-w-7xl lg:px-8 w-full">
+        <div className="bg-white rounded-3xl shadow-2xl p-3 md:p-4 border border-slate-200/80">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 items-center">
             <div className="md:col-span-3 flex items-center bg-slate-50 rounded-2xl px-4 py-3 border border-slate-200 focus-within:border-teal-600 focus-within:bg-white transition-all">
               <span className="material-symbols-outlined text-teal-600 mr-3 text-[22px]">pin_drop</span>
               <div className="flex-1 min-w-0">
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Destination</label>
                 <input
                   className="w-full bg-transparent font-bold text-slate-900 text-sm outline-none p-0 border-0 focus:ring-0"
-                  defaultValue="Dubai & Abu Dhabi"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  placeholder="Dubai & Abu Dhabi, Europe..."
                   type="text"
                 />
               </div>
@@ -149,7 +250,9 @@ export default function InternationalHero() {
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Departure From</label>
                 <input
                   className="w-full bg-transparent font-bold text-slate-900 text-sm outline-none p-0 border-0 focus:ring-0"
-                  defaultValue="Mumbai (BOM)"
+                  value={departureFrom}
+                  onChange={(e) => setDepartureFrom(e.target.value)}
+                  placeholder="Mumbai (BOM), Delhi (DEL)..."
                   type="text"
                 />
               </div>
@@ -186,7 +289,7 @@ export default function InternationalHero() {
             </div>
             <div className="md:col-span-2">
               <button
-                className="w-full min-h-[56px] rounded-2xl bg-teal-600 hover:bg-teal-700 text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-wider uppercase shadow-lg shadow-teal-600/30"
+                className="w-full min-h-[56px] rounded-2xl bg-teal-600 hover:bg-teal-700 text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-wider uppercase shadow-lg shadow-teal-600/30 cursor-pointer"
                 type="submit"
               >
                 <span className="material-symbols-outlined text-[18px]">search</span>

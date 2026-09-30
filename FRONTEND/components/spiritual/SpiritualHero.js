@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import DatePickerPopover from '@/components/ui/DatePickerPopover';
 
 export default function SpiritualHero() {
+  const router = useRouter();
+  const [fromCity, setFromCity] = useState('Nagpur');
+  const [devsthan, setDevsthan] = useState('Varanasi & Ayodhya');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState({
     mainText: 'Tomorrow, 24 Oct',
@@ -49,6 +53,18 @@ export default function SpiritualHero() {
       mainText: dateResult.mainText,
       subText: dateResult.subText
     });
+  };
+
+  const handleSwap = () => {
+    const temp = fromCity;
+    setFromCity(devsthan);
+    setDevsthan(temp);
+  };
+
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
+    const query = devsthan.trim() || 'Varanasi';
+    router.push(`/packages?category=Spiritual&q=${encodeURIComponent(query)}`);
   };
 
   return (
@@ -116,14 +132,15 @@ export default function SpiritualHero() {
           }}
           className="bg-slate-900/80 backdrop-blur-xl border border-amber-500/30 rounded-3xl p-3 md:p-4 max-w-7xl mx-auto mb-6 text-left shadow-2xl"
         >
-          <form className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 items-center">
+          <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-3 items-center">
             <div className="md:col-span-3 flex items-center bg-slate-950/60 rounded-2xl px-4 py-3 border border-amber-500/20 focus-within:border-amber-400 transition-all">
               <span className="material-symbols-outlined text-amber-400 mr-3 text-[22px]">departure_board</span>
               <div className="flex-1 min-w-0">
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-300/80">From City</label>
                 <input
                   className="w-full bg-transparent font-bold text-white text-base outline-none p-0 border-0 focus:ring-0 placeholder-white/40"
-                  defaultValue="Nagpur"
+                  value={fromCity}
+                  onChange={(e) => setFromCity(e.target.value)}
                   type="text"
                 />
                 <p className="text-[11px] text-amber-200/60 truncate">Dharampeth, Chatrapati Sq</p>
@@ -131,8 +148,10 @@ export default function SpiritualHero() {
             </div>
             <div className="md:col-span-1 flex justify-center -my-3 md:my-0">
               <button
-                className="w-10 h-10 rounded-full bg-slate-800 border border-amber-500/30 shadow-md flex items-center justify-center text-amber-400 hover:bg-amber-500 hover:text-slate-950 transition-all"
                 type="button"
+                onClick={handleSwap}
+                className="w-10 h-10 rounded-full bg-slate-800 border border-amber-500/30 shadow-md flex items-center justify-center text-amber-400 hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer"
+                title="Swap From and Devsthan"
               >
                 <span className="material-symbols-outlined text-[20px]">swap_horiz</span>
               </button>
@@ -143,7 +162,8 @@ export default function SpiritualHero() {
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-300/80">Select Devsthan / Circuit</label>
                 <input
                   className="w-full bg-transparent font-bold text-white text-base outline-none p-0 border-0 focus:ring-0 placeholder-white/40"
-                  defaultValue="Varanasi & Ayodhya"
+                  value={devsthan}
+                  onChange={(e) => setDevsthan(e.target.value)}
                   type="text"
                 />
                 <p className="text-[11px] text-amber-200/60 truncate">Kashi Vishwanath, Ram Janmabhoomi</p>
@@ -183,8 +203,8 @@ export default function SpiritualHero() {
             </div>
             <div className="md:col-span-2">
               <button
-                className="w-full min-h-[58px] rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-wider uppercase shadow-lg shadow-amber-500/20"
-                type="button"
+                type="submit"
+                className="w-full min-h-[58px] rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition-all flex items-center justify-center gap-2 font-bold text-xs tracking-wider uppercase shadow-lg shadow-amber-500/20 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">search</span>
                 <span>FIND YATRAS</span>
