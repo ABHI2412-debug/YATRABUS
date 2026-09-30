@@ -130,6 +130,29 @@ function CinemaSeatBookingContent() {
   const [sleeperDeck, setSleeperDeck] = useState('lower');
   const [filterLadiesOnly, setFilterLadiesOnly] = useState(false);
   const [filterSoloWindow, setFilterSoloWindow] = useState(false);
+  
+  // Seat state
+  const [seaterSeats, setSeaterSeats] = useState(seater2x2Seats);
+  const [lowerSeats, setLowerSeats] = useState(sleeperLowerDeck);
+  const [upperSeats, setUpperSeats] = useState(sleeperUpperDeck);
+
+  React.useEffect(() => {
+    fetch(`http://localhost:5000/api/bookings/seats?tripId=${busInfo.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.bookedSeats) {
+          const markBooked = (seats) => seats.map(s => 
+            data.bookedSeats.includes(s.name) || data.bookedSeats.includes(s.id) 
+              ? { ...s, status: 'booked' } 
+              : s
+          );
+          setSeaterSeats(markBooked(seater2x2Seats));
+          setLowerSeats(markBooked(sleeperLowerDeck));
+          setUpperSeats(markBooked(sleeperUpperDeck));
+        }
+      })
+      .catch(console.error);
+  }, [busInfo.id]);
 
   // Pre-select first available seats based on bus type
   const [selectedSeats, setSelectedSeats] = useState(
@@ -151,10 +174,10 @@ function CinemaSeatBookingContent() {
 
   const seatsData =
     layoutMode === 'seater'
-      ? seater2x2Seats
+      ? seaterSeats
       : sleeperDeck === 'lower'
-      ? sleeperLowerDeck
-      : sleeperUpperDeck;
+      ? lowerSeats
+      : upperSeats;
 
   const toggleSeatSelection = (seat) => {
     if (seat.status === 'booked') return;

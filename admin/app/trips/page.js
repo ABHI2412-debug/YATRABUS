@@ -174,8 +174,11 @@ export default function TripsPage() {
   const allTrips = [...dbTrips, ...TRIPS];
 
   const filtered = allTrips.filter(t => {
+    const routeString = `${t.from} → ${t.to}`;
+    const matchRoute = routeFilter === "All Routes" || routeString === routeFilter;
+    const matchBus = busFilter === "All Buses" || t.plate === busFilter;
     const matchStatus = statusFilter === "All Status" || t.status === statusFilter;
-    return matchStatus;
+    return matchRoute && matchBus && matchStatus;
   });
 
   return (
@@ -407,7 +410,7 @@ export default function TripsPage() {
 
         {/* Pagination */}
         <div style={{ padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #F1F5F9", flexWrap: "wrap", gap: "0.75rem" }}>
-          <span style={{ fontSize: "0.8125rem", color: "#64748B" }}>Showing 1 to 10 of 128 trips</span>
+          <span style={{ fontSize: "0.8125rem", color: "#64748B" }}>Showing {filtered.length} of {allTrips.length} trips</span>
           <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
             <button style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B" }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 
@@ -103,8 +103,31 @@ export default function BusesPage() {
   const [search,       setSearch]       = useState("");
   const [typeFilter,   setTypeFilter]   = useState("All Types");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [dbBuses, setDbBuses] = useState([]);
 
-  const filtered = BUSES.filter(b => {
+  useEffect(() => {
+    fetch('http://localhost:5000/api/buses')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mapped = data.map(b => ({
+            plate: b.plateNumber,
+            type: b.type,
+            seats: b.totalSeats,
+            amenities: b.amenities || { wifi: true, charging: true, blanket: false, gps: true },
+            status: b.status || "Active",
+            serviced: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), // Mock recent service date
+            busStyle: b.busStyle || "silver"
+          }));
+          setDbBuses(mapped);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  const allBuses = [...dbBuses, ...BUSES];
+
+  const filtered = allBuses.filter(b => {
     const q = search.toLowerCase();
     const matchSearch = !q || b.plate.toLowerCase().includes(q) || b.type.toLowerCase().includes(q);
     const matchType   = typeFilter === "All Types"   || b.type.toLowerCase().includes(typeFilter.toLowerCase());
@@ -306,7 +329,7 @@ export default function BusesPage() {
 
         {/* Pagination */}
         <div style={{ padding: "0.875rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #F1F5F9", flexWrap: "wrap", gap: "0.75rem" }}>
-          <span style={{ fontSize: "0.8125rem", color: "#64748B" }}>Showing 1 to 10 of 48 buses</span>
+          <span style={{ fontSize: "0.8125rem", color: "#64748B" }}>Showing 1 to {filtered.length} of {allBuses.length} buses</span>
           <div style={{ display: "flex", gap: "0.375rem", alignItems: "center" }}>
             <button style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B" }}>
               <span className="material-symbols-outlined" style={{ fontSize: 16 }}>chevron_left</span>

@@ -319,7 +319,7 @@ export default function Header() {
             )}
 
             {/* PROFILE DROPDOWN MENU */}
-            {isProfileOpen && (
+            {user && isProfileOpen && (
               <div className="absolute right-0 top-full mt-1.5 w-60 sm:w-64 bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl p-2 z-50 animate-fadeIn space-y-1">
                 {/* Profile User Badge Header */}
                 <div className="px-3 py-2.5 border-b border-white/10 flex items-center gap-3">

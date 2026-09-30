@@ -8,9 +8,6 @@ const router = Router();
 router.get('/', async (req, res) => {
   try {
     const buses = await prisma.bus.findMany({
-      where: {
-        status: 'Active'
-      },
       orderBy: {
         plateNumber: 'asc'
       }

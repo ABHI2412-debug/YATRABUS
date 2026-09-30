@@ -128,7 +128,8 @@ function SearchContent() {
   const initialTo = searchParams.get('to') || 'Pune';
   const initialDate = searchParams.get('date') || 'Tomorrow, 24 Oct';
 
-  const [buses, setBuses] = useState(sampleBuses);
+  const [buses, setBuses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [minRating, setMinRating] = useState(0);
@@ -147,6 +148,28 @@ function SearchContent() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isPassengerOpen, setIsPassengerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+
+  const fetchBuses = () => {
+    setIsLoading(true);
+    fetch(`http://localhost:5000/api/buses/search?from=${fromCity}&to=${toCity}&date=${selectedDate.mainText}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          setBuses(sampleBuses);
+        } else {
+          setBuses(data.length > 0 ? data : sampleBuses);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch buses', err);
+        setBuses(sampleBuses);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  React.useEffect(() => {
+    fetchBuses();
+  }, []);
 
   const triggerToast = (msg) => {
     setToastMessage(msg);
@@ -385,6 +408,7 @@ function SearchContent() {
               type="button"
               onClick={() => {
                 closeAllDropdowns();
+                fetchBuses();
                 triggerToast(`Buses refreshed for ${fromCity} ➔ ${toCity}`);
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-scarlet hover:bg-brand-hover text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
@@ -550,7 +574,12 @@ function SearchContent() {
           </div>
 
           <div className="space-y-4">
-            {filteredBuses.length === 0 ? (
+            {isLoading ? (
+              <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 border-4 border-brand-scarlet border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <h3 className="text-lg font-bold text-slate-800 font-serif">Searching Buses...</h3>
+              </div>
+            ) : filteredBuses.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 shadow-sm space-y-3">
                 <span className="material-symbols-outlined text-[48px] text-slate-300">directions_bus</span>
                 <h3 className="text-lg font-bold text-slate-800 font-serif">No Buses Match Your Selected Filters</h3>

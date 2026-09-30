@@ -49,6 +49,21 @@ router.post(['/', '/create'], async (req: AuthRequest, res) => {
     // TEMPORARY: allow unauthenticated booking for testing purposes.
     // In production, uncomment the auth requirement.
     let userId = req.user?.id;
+
+    // Manually extract token if authenticateJWT was not used
+    if (!userId && req.headers.authorization) {
+      const token = req.headers.authorization.split(' ')[1];
+      if (token) {
+        try {
+          const jwt = require('jsonwebtoken');
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'yatrabus_super_secret_key');
+          userId = decoded.id;
+        } catch (err) {
+          console.error("Invalid token during booking", err);
+        }
+      }
+    }
+
     if (!userId) {
       if (guestPhone) {
         // Find or create user based on phone
@@ -139,7 +154,7 @@ router.get('/my-bookings', authenticateJWT, async (req: AuthRequest, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const bookings = await prisma.busBooking.findMany({
+    const busBookings = await prisma.busBooking.findMany({
       where: { userId },
       include: {
         trip: {
@@ -151,7 +166,24 @@ router.get('/my-bookings', authenticateJWT, async (req: AuthRequest, res) => {
       },
       orderBy: { bookingDate: 'desc' }
     });
-    res.json(bookings);
+
+    const packageBookings = await prisma.packageBooking.findMany({
+      where: { userId },
+      include: {
+        package: true
+      }
+    });
+
+    const combined = [
+      ...busBookings,
+      ...packageBookings.map(pb => ({
+        ...pb,
+        isPackage: true,
+        bookingDate: pb.travelDate // Using travelDate for sorting/filtering
+      }))
+    ].sort((a, b) => new Date(b.bookingDate).getTime() - new Date(a.bookingDate).getTime());
+
+    res.json(combined);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to fetch user bookings' });

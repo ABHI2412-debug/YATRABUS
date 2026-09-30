@@ -66,6 +66,7 @@ export default function CustomerProfilePage() {
   const [selectedTrackBus, setSelectedTrackBus] = useState(null);
   const [isGpsModalOpen, setIsGpsModalOpen] = useState(false);
   const [upcomingTrips, setUpcomingTrips] = useState([]);
+  const [pastTrips, setPastTrips] = useState([]);
   const [shiftedCardId, setShiftedCardId] = useState(null);
   const [userName, setUserName] = useState('Rajesh Patel');
   const [userPhone, setUserPhone] = useState('+91 98765 43210');
@@ -93,23 +94,29 @@ export default function CustomerProfilePage() {
           const formattedLive = liveData.map(b => ({
             id: "BK" + b.id.substring(0, 6).toUpperCase(),
             bookingId: "BK" + b.id.substring(0, 6).toUpperCase(),
-            operator: b.trip?.bus?.operator || 'VedBus Premium',
+            operator: b.trip?.bus?.busStyle || 'VedBus Premium',
             busType: b.trip?.bus?.type || 'AC Sleeper',
-            busPlate: b.trip?.bus?.registrationNumber || 'MH-12-QZ-8812',
-            from: b.trip?.route?.origin || 'Nagpur',
+            busPlate: b.trip?.bus?.plateNumber || 'MH-12-QZ-8812',
+            from: b.trip?.route?.originCity || 'Nagpur',
             fromStation: 'VedBus Terminal',
             depTime: b.trip?.departureDatetime ? new Date(b.trip.departureDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '20:30',
             depDate: b.trip?.departureDatetime ? new Date(b.trip.departureDatetime).toLocaleDateString() : 'Tomorrow',
-            to: b.trip?.route?.destination || 'Pune',
+            rawDate: b.trip?.departureDatetime || b.travelDate || new Date().toISOString(),
+            to: b.trip?.route?.destinationCity || 'Pune',
             toStation: 'Drop Bay',
             arrTime: b.trip?.arrivalDatetime ? new Date(b.trip.arrivalDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '07:00',
             arrDate: b.trip?.arrivalDatetime ? new Date(b.trip.arrivalDatetime).toLocaleDateString() : 'Next Day',
             seats: b.seatNumbers || [],
-            passengerCount: b.seatNumbers?.length || 1,
+            passengerCount: b.seatNumbers?.length || b.travelersCount || 1,
             totalFare: b.totalAmount,
             driverName: 'Sunil Sharma',
             driverPhone: '+91 98220 11223',
-            status: b.status || 'Confirmed'
+            status: b.status || 'Confirmed',
+            isPackage: b.isPackage,
+            title: b.package?.title,
+            duration: b.package?.duration,
+            hotelTier: b.package?.badge?.includes('5-Star') ? '5star' : b.package?.badge?.includes('4-Star') ? '4star' : '3star',
+            pkgId: b.packageId
           }));
           return formattedLive;
         }
@@ -122,14 +129,25 @@ export default function CustomerProfilePage() {
     async function loadAllTrips() {
       if (typeof window !== 'undefined') {
         const liveTrips = await fetchLiveBookings();
-        setUpcomingTrips(liveTrips);
+        const now = new Date();
+        const upcoming = [];
+        const past = [];
+        liveTrips.forEach(trip => {
+          // Use rawDate for safe parsing
+          const tripDate = new Date(trip.rawDate);
+          if (tripDate < now && tripDate.toDateString() !== now.toDateString()) {
+            past.push(trip);
+          } else {
+            upcoming.push(trip);
+          }
+        });
+        setUpcomingTrips(upcoming);
+        setPastTrips(past);
       }
     }
 
     loadAllTrips();
   }, []);
-
-  const pastTrips = [];
 
   const [savedPassengers, setSavedPassengers] = useState([]);
 
@@ -761,10 +779,10 @@ export default function CustomerProfilePage() {
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ticket #{trip.id} • {trip.date}</span>
                     <h3 className="text-base font-serif font-bold text-slate-900 mt-0.5">{trip.from} ➔ {trip.to}</h3>
-                    <p className="text-xs text-slate-500">{trip.operator} • Seats {trip.seats}</p>
+                    <p className="text-xs text-slate-500">{trip.operator} • Seats {Array.isArray(trip.seats) ? trip.seats.join(', ') : trip.seats}</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-900">{trip.fare}</span>
+                    <span className="text-sm font-bold text-slate-900">₹{trip.totalFare}</span>
                     <button
                       onClick={() => alert(`Directing to re-book ${trip.from} to ${trip.to}...`)}
                       className="px-4 py-2 rounded-xl bg-brand-scarlet text-white font-bold text-xs shadow-sm hover:bg-brand-hover transition-all"
