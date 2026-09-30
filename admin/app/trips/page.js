@@ -109,6 +109,12 @@ const TH = {
   borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap",
 };
 
+function formatTripId(id) {
+  if (!id) return '';
+  if (id.startsWith('TRP')) return id;
+  return `TRP-${id.substring(0, 6).toUpperCase()}`;
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function TripsPage() {
@@ -339,7 +345,7 @@ export default function TripsPage() {
                     {/* Trip ID */}
                     <td style={{ padding: "0.75rem 0.875rem", fontSize: "0.8125rem", fontWeight: 700, color: cancelled ? "#94A3B8" : "#0F172A", whiteSpace: "nowrap" }}>
                       <Link href={`/trips/${t.id}/seats`} style={{ color: cancelled ? "#94A3B8" : "#B91C1C", textDecoration: "none" }}>
-                        {t.id}
+                        {formatTripId(t.id)}
                       </Link>
                     </td>
 
@@ -568,7 +574,7 @@ export default function TripsPage() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.75rem", backgroundColor: "#F8FAFC", padding: "0.875rem", borderRadius: 8, marginBottom: "1.25rem", fontSize: "0.78rem" }}>
               <div>
                 <div style={{ color: "#94A3B8", fontSize: "0.68rem" }}>TRIP & ROUTE</div>
-                <div style={{ fontWeight: 700, color: "#0F172A" }}>{manifestTrip.id}</div>
+                <div style={{ fontWeight: 700, color: "#0F172A" }}>{formatTripId(manifestTrip.id)}</div>
                 <div>{manifestTrip.from} → {manifestTrip.to}</div>
               </div>
               <div>

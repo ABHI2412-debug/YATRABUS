@@ -60,6 +60,12 @@ const INITIAL_UPPER_SEATS = [
   { id: "U22", number: "U22", status: "available" },
 ];
 
+function formatTripId(id) {
+  if (!id) return '';
+  if (id.startsWith('TRP')) return id;
+  return `TRP-${id.substring(0, 6).toUpperCase()}`;
+}
+
 export default function TripSeatMapPage() {
   const params = useParams();
   const tripId = params.id;
@@ -174,7 +180,7 @@ export default function TripSeatMapPage() {
         <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#94A3B8" }}>chevron_right</span>
         <Link href="/trips" style={{ color: "#64748B", textDecoration: "none" }}>Trips</Link>
         <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#94A3B8" }}>chevron_right</span>
-        <span style={{ color: "#64748B" }}>{tripId || "TRP1003"}</span>
+        <span style={{ color: "#64748B" }}>{formatTripId(tripId) || "TRP1003"}</span>
         <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#94A3B8" }}>chevron_right</span>
         <span style={{ color: "#0F172A", fontWeight: 500 }}>Seat Map</span>
       </div>
