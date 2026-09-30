@@ -44,29 +44,95 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }) {
     }
   };
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!mobileNumber || mobileNumber.length < 10) {
       alert('Please enter a valid 10-digit mobile number.');
       return;
     }
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: mobileNumber })
+      });
+      const data = await response.json();
+      if (!data.exists) {
+        alert('Account not found. Please sign up first.');
+        setMode('signup');
+        return;
+      }
+    } catch(err) {
+      console.error(err);
+    }
+    
     setIsOtpSent(true);
   };
 
-  const handleSubmitLogin = (e) => {
+  const handleSubmitLogin = async (e) => {
     e.preventDefault();
-    alert(`Logged in successfully with mobile number +91 ${mobileNumber}! Welcome back to VedBus.`);
-    onClose();
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login-mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: mobileNumber })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        alert(data.error || 'Failed to login');
+        return;
+      }
+      
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('user_name', data.user.name);
+      localStorage.setItem('user_phone', data.user.phone);
+      window.dispatchEvent(new Event('authChange'));
+      
+      alert(`Logged in successfully! Welcome back to VedBus.`);
+      onClose();
+    } catch(err) {
+      console.error(err);
+      alert('Network error.');
+    }
   };
 
-  const handleSubmitSignup = (e) => {
+  const handleSubmitSignup = async (e) => {
     e.preventDefault();
     if (!fullName || !email || !mobileNumber) {
       alert('Please fill out all required fields (*).');
       return;
     }
-    alert(`Account created successfully for ${fullName}! Welcome to VedBus.`);
-    onClose();
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/register-mobile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: fullName, email, phone: mobileNumber })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        alert(data.error || 'Failed to register');
+        if (data.error === 'User with this email or phone already exists') {
+           setMode('login');
+        }
+        return;
+      }
+      
+      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('user_name', data.user.name);
+      localStorage.setItem('user_phone', data.user.phone);
+      window.dispatchEvent(new Event('authChange'));
+      
+      alert(`Account created successfully for ${fullName}! Welcome to VedBus.`);
+      onClose();
+    } catch(err) {
+      console.error(err);
+      alert('Network error.');
+    }
   };
 
   return createPortal(

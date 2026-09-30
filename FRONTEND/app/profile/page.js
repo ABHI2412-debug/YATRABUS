@@ -52,58 +52,86 @@ const defaultUpcomingTrips = [
   },
 ];
 
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length > 1) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return (parts[0]?.[0] || 'U').toUpperCase();
+};
+
 export default function CustomerProfilePage() {
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past' | 'wallet' | 'passengers'
   const [selectedTrackBus, setSelectedTrackBus] = useState(null);
   const [isGpsModalOpen, setIsGpsModalOpen] = useState(false);
-  const [upcomingTrips, setUpcomingTrips] = useState(defaultUpcomingTrips);
+  const [upcomingTrips, setUpcomingTrips] = useState([]);
+  const [shiftedCardId, setShiftedCardId] = useState(null);
+  const [userName, setUserName] = useState('Rajesh Patel');
+  const [userPhone, setUserPhone] = useState('+91 98765 43210');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('vedbus_user_trips');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const storedIds = new Set(parsed.map(t => t.id));
-            const filteredDefaults = defaultUpcomingTrips.filter(t => !storedIds.has(t.id));
-            setUpcomingTrips([...parsed, ...filteredDefaults]);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load trips from localStorage:', err);
-      }
+      const storedName = localStorage.getItem('user_name');
+      const storedPhone = localStorage.getItem('user_phone');
+      if (storedName) setUserName(storedName);
+      if (storedPhone) setUserPhone(storedPhone);
     }
   }, []);
 
-  const pastTrips = [
-    {
-      id: 'YB-772019',
-      operator: 'Purple Metrolink Luxury Lines',
-      from: 'Pune',
-      to: 'Mumbai',
-      date: '12 Sep 2026',
-      seats: '2C, 2D',
-      fare: '₹945',
-      status: 'Completed',
-    },
-    {
-      id: 'YB-661094',
-      operator: 'VedBus Coastal Tours',
-      from: 'Mumbai',
-      to: 'Goa (Calangute)',
-      date: '04 Aug 2026',
-      seats: 'L1',
-      fare: '₹6,999',
-      status: 'Completed',
-    },
-  ];
+  useEffect(() => {
+    async function fetchLiveBookings() {
+      try {
+        const response = await fetch('http://localhost:5000/api/bookings/my-bookings', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+          }
+        });
+        if (response.ok) {
+          const liveData = await response.json();
+          // Transform backend data to frontend format
+          const formattedLive = liveData.map(b => ({
+            id: "BK" + b.id.substring(0, 6).toUpperCase(),
+            bookingId: "BK" + b.id.substring(0, 6).toUpperCase(),
+            operator: b.trip?.bus?.operator || 'VedBus Premium',
+            busType: b.trip?.bus?.type || 'AC Sleeper',
+            busPlate: b.trip?.bus?.registrationNumber || 'MH-12-QZ-8812',
+            from: b.trip?.route?.origin || 'Nagpur',
+            fromStation: 'VedBus Terminal',
+            depTime: b.trip?.departureDatetime ? new Date(b.trip.departureDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '20:30',
+            depDate: b.trip?.departureDatetime ? new Date(b.trip.departureDatetime).toLocaleDateString() : 'Tomorrow',
+            to: b.trip?.route?.destination || 'Pune',
+            toStation: 'Drop Bay',
+            arrTime: b.trip?.arrivalDatetime ? new Date(b.trip.arrivalDatetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '07:00',
+            arrDate: b.trip?.arrivalDatetime ? new Date(b.trip.arrivalDatetime).toLocaleDateString() : 'Next Day',
+            seats: b.seatNumbers || [],
+            passengerCount: b.seatNumbers?.length || 1,
+            totalFare: b.totalAmount,
+            driverName: 'Sunil Sharma',
+            driverPhone: '+91 98220 11223',
+            status: b.status || 'Confirmed'
+          }));
+          return formattedLive;
+        }
+      } catch (err) {
+        console.error('Failed to fetch live bookings:', err);
+      }
+      return [];
+    }
 
-  const [savedPassengers, setSavedPassengers] = useState([
-    { id: 1, name: 'Rajesh Patel', age: 34, gender: 'Male', relation: 'Self / Primary' },
-    { id: 2, name: 'Sneha Patel', age: 31, gender: 'Female', relation: 'Spouse' },
-    { id: 3, name: 'Aarav Patel', age: 8, gender: 'Male', relation: 'Son' },
-  ]);
+    async function loadAllTrips() {
+      if (typeof window !== 'undefined') {
+        const liveTrips = await fetchLiveBookings();
+        setUpcomingTrips(liveTrips);
+      }
+    }
+
+    loadAllTrips();
+  }, []);
+
+  const pastTrips = [];
+
+  const [savedPassengers, setSavedPassengers] = useState([]);
 
   const [selectedPassengerIds, setSelectedPassengerIds] = useState([1, 2]);
   const [isPassengerModalOpen, setIsPassengerModalOpen] = useState(false);
@@ -227,17 +255,15 @@ export default function CustomerProfilePage() {
           {/* LEFT COLUMN: AVATAR & USER DETAILS */}
           <div className="flex items-center gap-3.5 sm:gap-5 pl-2 sm:pl-4 lg:pl-6">
             <div className="relative shrink-0">
-              <img
-                src="/images/avatar.png"
-                alt="Rajesh Patel Profile"
-                className="w-16 h-16 sm:w-20 sm:h-20 lg:w-22 lg:h-22 rounded-full object-cover ring-4 ring-white shadow-lg"
-              />
+              <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-22 lg:h-22 rounded-full bg-brand-scarlet flex items-center justify-center text-3xl font-bold text-white shadow-lg ring-4 ring-white">
+                {getInitials(userName)}
+              </div>
             </div>
 
             <div className="space-y-0.5 sm:space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-serif font-extrabold text-slate-950 tracking-tight">
-                  Rajesh Patel
+                  {userName}
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-amber-200/90 text-amber-950 font-extrabold text-[11px] border border-amber-300 shadow-sm flex items-center gap-1 whitespace-nowrap">
                   ⭐ VIP Club Member
@@ -245,7 +271,7 @@ export default function CustomerProfilePage() {
               </div>
 
               <p className="text-xs font-semibold text-slate-700">
-                rajesh.patel@gmail.com <span className="mx-1 font-normal text-slate-400">|</span> +91 98765 43210
+                {userPhone}
               </p>
 
               <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-700 pt-0.5">
@@ -317,7 +343,7 @@ export default function CustomerProfilePage() {
                   YATRA WALLET
                 </span>
                 <span className="text-xs sm:text-sm font-black text-red-600 block leading-tight">
-                  ₹1,450
+                  ₹0
                 </span>
               </div>
               <span className="material-symbols-outlined text-red-500 text-sm group-hover:translate-x-0.5 transition-transform ml-0.5">
@@ -369,13 +395,45 @@ export default function CustomerProfilePage() {
               {upcomingTrips.map((trip) => {
                 if (trip.isPackage) {
                   const isSpiritual = trip.category?.toLowerCase().includes('spiritual') || trip.category?.toLowerCase().includes('pilgrimage');
+                  const isShifted = shiftedCardId === trip.id;
                   return (
-                    <div
-                      key={trip.id}
-                      className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4"
-                    >
-                      {/* TOP HEADER BAND */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div key={trip.id} className="relative rounded-3xl overflow-hidden shadow-sm hover:shadow-md border border-slate-200/90 bg-slate-50">
+                      {/* Background Cancel Layer */}
+                      <div className="absolute inset-y-0 right-0 w-48 flex items-center justify-center z-0 bg-red-50 border-l border-red-100">
+                        <button 
+                          onClick={async () => {
+                            try {
+                              await fetch('http://localhost:5000/api/notifications', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  type: 'cancelation',
+                                  title: 'Cancelation Request',
+                                  message: `User requested cancelation for Booking #${trip.bookingId || trip.id}`
+                                })
+                              });
+                            } catch (err) {
+                              console.error(err);
+                            }
+                            alert('Cancelation requested for ' + trip.id);
+                            setShiftedCardId(null);
+                          }}
+                          className="w-full h-full flex flex-col items-center justify-center text-red-600 hover:bg-red-100 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-[32px] mb-1">cancel</span>
+                          <span className="font-bold text-sm text-center px-2">Request<br/>Cancelation</span>
+                        </button>
+                      </div>
+
+                      {/* Main Card Content */}
+                      <div 
+                        className={`bg-white transition-transform duration-300 ease-in-out relative z-10 flex ${
+                          isShifted ? '-translate-x-48' : 'translate-x-0'
+                        }`}
+                      >
+                        <div className="flex-1 p-6 space-y-4">
+                          {/* TOP HEADER BAND */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
@@ -509,17 +567,59 @@ export default function CustomerProfilePage() {
                           </button>
                         </div>
                       </div>
+                        </div>
+                        {/* Sliding Handle on Right */}
+                        <div 
+                          onClick={() => setShiftedCardId(isShifted ? null : trip.id)}
+                          className="w-4 bg-red-50/30 hover:bg-red-50 border-l border-red-100 cursor-pointer flex items-center justify-center transition-colors shrink-0"
+                          title="Toggle Cancelation Options"
+                        >
+                          <div className="w-1 h-12 rounded-full bg-red-300"></div>
+                        </div>
+                      </div>
                     </div>
                   );
                 }
 
+                const isShifted = shiftedCardId === trip.id;
                 return (
-                <div
-                  key={trip.id}
-                  className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all space-y-4"
-                >
-                  {/* TOP HEADER BAND */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div key={trip.id} className="relative rounded-3xl overflow-hidden shadow-sm hover:shadow-md border border-slate-200/90 bg-slate-50">
+                  {/* Background Cancel Layer */}
+                  <div className="absolute inset-y-0 right-0 w-48 flex items-center justify-center z-0 bg-red-50 border-l border-red-100">
+                    <button 
+                      onClick={async () => {
+                        try {
+                          await fetch('http://localhost:5000/api/notifications', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              type: 'cancelation',
+                              title: 'Cancelation Request',
+                              message: `User requested cancelation for Booking #${trip.id}`
+                            })
+                          });
+                        } catch (err) {
+                          console.error(err);
+                        }
+                        alert('Cancelation requested for ' + trip.id);
+                        setShiftedCardId(null);
+                      }}
+                      className="w-full h-full flex flex-col items-center justify-center text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[32px] mb-1">cancel</span>
+                      <span className="font-bold text-sm text-center px-2">Request<br/>Cancelation</span>
+                    </button>
+                  </div>
+
+                  {/* Main Card Content */}
+                  <div 
+                    className={`bg-white transition-transform duration-300 ease-in-out relative z-10 flex ${
+                      isShifted ? '-translate-x-48' : 'translate-x-0'
+                    }`}
+                  >
+                    <div className="flex-1 p-6 space-y-4">
+                      {/* TOP HEADER BAND */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold border border-emerald-300">
@@ -629,6 +729,16 @@ export default function CustomerProfilePage() {
                       </button>
                     </div>
                   </div>
+                    </div>
+                    {/* Sliding Handle on Right */}
+                    <div 
+                      onClick={() => setShiftedCardId(isShifted ? null : trip.id)}
+                      className="w-4 bg-red-50/30 hover:bg-red-50 border-l border-red-100 cursor-pointer flex items-center justify-center transition-colors shrink-0"
+                      title="Toggle Cancelation Options"
+                    >
+                      <div className="w-1 h-12 rounded-full bg-red-300"></div>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -641,7 +751,12 @@ export default function CustomerProfilePage() {
           <div className="space-y-4">
             <h2 className="text-xl font-serif font-bold text-slate-900 mb-4">Past Completed Trips</h2>
             <div className="space-y-3">
-              {pastTrips.map(trip => (
+              {pastTrips.length === 0 ? (
+                <div className="w-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 text-slate-500 text-sm">
+                  You have no past trips. Book your first journey with us!
+                </div>
+              ) : (
+                pastTrips.map(trip => (
                 <div key={trip.id} className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm flex items-center justify-between flex-wrap gap-4">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Ticket #{trip.id} • {trip.date}</span>
@@ -658,7 +773,7 @@ export default function CustomerProfilePage() {
                     </button>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         )}
@@ -669,7 +784,7 @@ export default function CustomerProfilePage() {
             <div className="p-6 rounded-3xl bg-slate-900 text-white flex justify-between items-center shadow-lg">
               <div>
                 <span className="text-xs font-bold uppercase tracking-widest text-slate-400 block">Available Wallet Balance</span>
-                <span className="text-3xl font-extrabold text-amber-400">₹1,450</span>
+                <span className="text-3xl font-extrabold text-amber-400">₹0</span>
                 <p className="text-xs text-slate-300 mt-1">Use 100% wallet balance on any bus ticket or Devsthan package booking.</p>
               </div>
               <button

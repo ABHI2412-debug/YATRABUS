@@ -31,12 +31,13 @@ export default function CheckoutPage() {
           const parsed = JSON.parse(saved);
           setBookingData(parsed);
           if (parsed.selectedSeats && parsed.selectedSeats.length > 0) {
+            const loggedInName = localStorage.getItem('user_name') || '';
             setPassengers(
               parsed.selectedSeats.map((s, idx) => ({
-                seat: s.name,
-                name: idx === 0 ? 'Rajesh Patel' : '',
-                age: idx === 0 ? '34' : '',
-                gender: idx === 0 ? 'male' : 'female',
+                seat: s.name || s,
+                name: idx === 0 ? loggedInName : '',
+                age: '',
+                gender: 'male',
               }))
             );
           }
@@ -61,44 +62,73 @@ export default function CheckoutPage() {
     setPassengers(updated);
   };
 
-  const handlePayNow = (e) => {
+  const handlePayNow = async (e) => {
     e.preventDefault();
-    const newId = `YB-${Math.floor(100000 + Math.random() * 900000)}`;
-    setCreatedTicketId(newId);
-
-    if (typeof window !== 'undefined') {
-      const newTrip = {
-        id: newId,
-        operator: bookingData?.operator || 'VRL Travels Express',
-        busType: bookingData?.busType || 'Volvo B11R AC Sleeper',
-        busPlate: bookingData?.busPlate || 'MH-12-QZ-8812',
-        from: bookingData?.from || 'Nagpur',
-        fromStation: bookingData?.boardingPoint?.location || 'Dharampeth VedBus Terminal',
-        depTime: bookingData?.depTime || '20:30',
-        depDate: bookingData?.date || 'Tomorrow, 24 Oct',
-        to: bookingData?.to || 'Pune',
-        toStation: bookingData?.droppingPoint?.location || 'Swargate Express Terminal',
-        arrTime: bookingData?.arrTime || '07:00',
-        arrDate: 'Next Day',
-        seats: passengers.map(p => p.seat),
-        passengerCount: passengers.length,
-        passengers: passengers,
-        totalFare: grandTotal,
-        driverName: 'Sunil Sharma',
-        driverPhone: '+91 98220 11223',
-        currentLocation: 'Terminal Bay (Scheduled)',
-        speed: '0 km/h',
-        nextStop: 'Departure Scheduled',
-        status: 'Confirmed',
-        bookedAt: new Date().toISOString(),
+    try {
+      const payload = {
+        tripId: bookingData?.tripId || "d1ad6eac-5670-457d-a303-62ad67b3484c", // fallback trip ID
+        busId: bookingData?.busId,
+        selectedSeats: passengers.map(p => p.seat),
+        totalAmount: grandTotal,
+        guestName: typeof window !== 'undefined' ? localStorage.getItem('user_name') : null,
+        guestPhone: typeof window !== 'undefined' ? localStorage.getItem('user_phone') : null,
       };
 
-      try {
-        const existing = JSON.parse(localStorage.getItem('vedbus_user_trips') || '[]');
-        localStorage.setItem('vedbus_user_trips', JSON.stringify([newTrip, ...existing]));
-      } catch (err) {
-        console.error('Failed to save trip to localStorage:', err);
+      const response = await fetch("http://localhost:5000/api/bookings/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${typeof window !== 'undefined' ? localStorage.getItem("token") || "" : ""}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const shortId = "BK" + data.booking.id.substring(0, 6).toUpperCase();
+        setCreatedTicketId(shortId);
+        
+        if (typeof window !== 'undefined') {
+          // Add to local storage for "My Journeys" page
+          const newTrip = {
+            id: shortId,
+            operator: bookingData?.operator || 'VRL Travels Express',
+            busType: bookingData?.busType || 'Volvo B11R AC Sleeper',
+            busPlate: bookingData?.busPlate || 'MH-12-QZ-8812',
+            from: bookingData?.from || 'Nagpur',
+            fromStation: bookingData?.boardingPoint?.location || 'Dharampeth VedBus Terminal',
+            depTime: bookingData?.depTime || '20:30',
+            depDate: bookingData?.date || 'Tomorrow, 24 Oct',
+            to: bookingData?.to || 'Pune',
+            toStation: bookingData?.droppingPoint?.location || 'Swargate Express Terminal',
+            arrTime: bookingData?.arrTime || '07:00',
+            arrDate: 'Next Day',
+            seats: passengers.map(p => p.seat),
+            passengerCount: passengers.length,
+            passengers: passengers,
+            totalFare: grandTotal,
+            driverName: 'Sunil Sharma',
+            driverPhone: '+91 98220 11223',
+            currentLocation: 'Terminal Bay (Scheduled)',
+            speed: '0 km/h',
+            nextStop: 'Departure Scheduled',
+            status: 'Confirmed',
+            bookedAt: new Date().toISOString(),
+          };
+          try {
+            const existing = JSON.parse(localStorage.getItem('vedbus_user_trips') || '[]');
+            localStorage.setItem('vedbus_user_trips', JSON.stringify([newTrip, ...existing]));
+          } catch (err) {
+            console.error('Failed to save trip to localStorage:', err);
+          }
+        }
+      } else {
+        console.error("Backend refused booking. Continuing with mock.");
+        setCreatedTicketId(`YB-${Math.floor(100000 + Math.random() * 900000)}`);
       }
+    } catch (err) {
+      console.error("Booking error:", err);
+      setCreatedTicketId(`YB-${Math.floor(100000 + Math.random() * 900000)}`);
     }
 
     setIsSuccessModalOpen(true);

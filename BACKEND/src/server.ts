@@ -13,6 +13,8 @@ import trackingRoutes from './routes/tracking';
 import homepageRoutes from './routes/homepage';
 import supportRoutes from './routes/support';
 import offerRoutes from './routes/offers';
+import notificationRoutes from './routes/notifications';
+import tripRoutes from './routes/trips';
 
 dotenv.config();
 
@@ -39,6 +41,7 @@ app.get('/', (req, res) => {
 // Modular Routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/buses', busRoutes);
+app.use('/api/trips', tripRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/users', userRoutes);
@@ -46,8 +49,10 @@ app.use('/api/tracking', trackingRoutes);
 app.use('/api/homepage', homepageRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/offers', offerRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+// Trigger nodemon restart

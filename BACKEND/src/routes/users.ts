@@ -1,4 +1,4 @@
-import express, { Response } from 'express';
+import express, { Request, Response } from 'express';
 import { prisma } from '../prisma';
 import { authenticateJWT, AuthRequest } from '../middleware/auth';
 
@@ -49,6 +49,45 @@ router.get('/my-bookings', authenticateJWT, async (req: AuthRequest, res: Respon
     res.json({ busBookings, packageBookings });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// Admin: Get All Users
+router.get('/all', async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        createdAt: true,
+        _count: {
+          select: {
+            busBookings: true,
+            packageBookings: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const formattedUsers = users.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      role: u.role,
+      status: 'Active',
+      registered: u.createdAt,
+      bookings: u._count.busBookings + u._count.packageBookings,
+    }));
+
+    res.json(formattedUsers);
+  } catch (error: any) {
+    console.error("Error fetching all users:", error);
+    res.status(500).json({ error: 'Failed to fetch all users', details: error.message, stack: error.stack });
   }
 });
 

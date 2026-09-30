@@ -7,6 +7,15 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import AuthModal from './AuthModal';
 
+const getInitials = (name) => {
+  if (!name) return 'U';
+  const parts = name.trim().split(' ').filter(Boolean);
+  if (parts.length > 1) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return (parts[0]?.[0] || 'U').toUpperCase();
+};
+
 export default function Header() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -14,9 +23,37 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     setMounted(true);
+    
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        setUser({
+          name: localStorage.getItem('user_name') || 'Guest User',
+          phone: localStorage.getItem('user_phone') || ''
+        });
+      } else {
+        setUser(null);
+      }
+    };
+    checkAuth();
+    
+    const handleAuthChange = () => checkAuth();
+    const handleOpenAuth = () => {
+      setAuthMode('login');
+      setIsAuthModalOpen(true);
+    };
+
+    window.addEventListener('authChange', handleAuthChange);
+    window.addEventListener('openAuthModal', handleOpenAuth);
+    
+    return () => {
+      window.removeEventListener('authChange', handleAuthChange);
+      window.removeEventListener('openAuthModal', handleOpenAuth);
+    };
   }, []);
 
   const isBusTicketsActive = pathname === '/';
@@ -254,37 +291,44 @@ export default function Header() {
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
           >
-            <Link
-              href="/profile"
-              onClick={() => setIsProfileOpen(false)}
-              aria-expanded={isProfileOpen}
-              aria-label="User profile and account menu"
-              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-white/30 bg-white/15 hover:bg-white/25 text-white backdrop-blur-xl font-bold text-[11px] sm:text-xs transition-all duration-200 shadow-md active:scale-95 whitespace-nowrap cursor-pointer"
-            >
-              <img
-                alt="Profile Avatar"
-                className="w-5 h-5 rounded-full object-cover ring-1 ring-white/40 shrink-0"
-                src="/images/avatar.png"
-              />
-              <span className="hidden sm:inline">Profile</span>
-              <span className={`material-symbols-outlined text-[14px] text-white/70 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}>
-                expand_more
-              </span>
-            </Link>
+            {user ? (
+              <Link
+                href="/profile"
+                onClick={() => setIsProfileOpen(false)}
+                aria-expanded={isProfileOpen}
+                aria-label="User profile and account menu"
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full border border-white/30 bg-white/15 hover:bg-white/25 text-white backdrop-blur-xl font-bold text-[11px] sm:text-xs transition-all duration-200 shadow-md active:scale-95 whitespace-nowrap cursor-pointer"
+              >
+                <div className="w-5 h-5 rounded-full bg-brand-scarlet flex items-center justify-center text-[9px] font-bold text-white shrink-0 shadow-inner">
+                  {getInitials(user.name)}
+                </div>
+                <span className="hidden sm:inline">{user.name.split(' ')[0]}</span>
+                <span className={`material-symbols-outlined text-[14px] text-white/70 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}>
+                  expand_more
+                </span>
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setAuthMode('login'); setIsAuthModalOpen(true); }}
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-4 py-1.5 rounded-full border border-white/30 bg-brand-scarlet/90 hover:bg-brand-scarlet text-white backdrop-blur-xl font-bold text-[11px] sm:text-xs transition-all duration-200 shadow-md active:scale-95 whitespace-nowrap cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">account_circle</span>
+                <span>Log In</span>
+              </button>
+            )}
 
             {/* PROFILE DROPDOWN MENU */}
             {isProfileOpen && (
               <div className="absolute right-0 top-full mt-1.5 w-60 sm:w-64 bg-slate-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 shadow-2xl p-2 z-50 animate-fadeIn space-y-1">
                 {/* Profile User Badge Header */}
                 <div className="px-3 py-2.5 border-b border-white/10 flex items-center gap-3">
-                  <img
-                    alt="Profile Avatar"
-                    className="w-9 h-9 rounded-full object-cover ring-2 ring-brand-scarlet/50 shrink-0"
-                    src="/images/avatar.png"
-                  />
+                  <div className="w-9 h-9 rounded-full bg-brand-scarlet flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-inner">
+                    {getInitials(user?.name)}
+                  </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-white truncate">Rajesh Patel</p>
-                    <p className="text-[10px] text-slate-400 truncate">+91 98765 43210</p>
+                    <p className="text-xs font-bold text-white truncate">{user?.name}</p>
+                    <p className="text-[10px] text-slate-400 truncate">{user?.phone}</p>
                   </div>
                 </div>
 
@@ -342,7 +386,14 @@ export default function Header() {
 
                 <button
                   type="button"
-                  onClick={() => setIsProfileOpen(false)}
+                  onClick={() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user_name');
+                    localStorage.removeItem('user_phone');
+                    window.dispatchEvent(new Event('authChange'));
+                    setIsProfileOpen(false);
+                    window.location.href = '/';
+                  }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-left cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-[18px]">logout</span>
@@ -407,24 +458,44 @@ export default function Header() {
             {/* 2. Scrollable Body Content */}
             <div className="flex-1 overflow-y-auto px-4 py-5 space-y-6 overscroll-contain">
               {/* User Profile Card Link */}
-              <Link
-                href="/profile"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between p-3 rounded-2xl bg-white/10 border border-white/15 text-white hover:bg-white/15 transition-all shadow-md"
-              >
-                <div className="flex items-center gap-3">
-                  <img
-                    alt="Profile Avatar"
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-brand-scarlet/50 shrink-0"
-                    src="/images/avatar.png"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white truncate">Rajesh Patel</p>
-                    <p className="text-[10px] text-slate-300 truncate">+91 98765 43210 • View Profile</p>
+              {user ? (
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/10 border border-white/15 text-white hover:bg-white/15 transition-all shadow-md"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-brand-scarlet flex items-center justify-center text-sm font-bold text-white shrink-0 shadow-inner">
+                      {getInitials(user.name)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{user.name}</p>
+                      <p className="text-[10px] text-slate-300 truncate">{user.phone} • View Profile</p>
+                    </div>
                   </div>
-                </div>
-                <span className="material-symbols-outlined text-[18px] text-slate-400">chevron_right</span>
-              </Link>
+                  <span className="material-symbols-outlined text-[18px] text-slate-400">chevron_right</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    window.dispatchEvent(new CustomEvent('openAuthModal'));
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-brand-scarlet/90 border border-brand-scarlet text-white hover:bg-brand-scarlet transition-all shadow-md cursor-pointer"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-[20px] text-white">person</span>
+                    </div>
+                    <div className="min-w-0 text-left">
+                      <p className="text-xs font-bold text-white truncate">Log In / Sign Up</p>
+                      <p className="text-[10px] text-white/80 truncate">Manage bookings & faster checkout</p>
+                    </div>
+                  </div>
+                  <span className="material-symbols-outlined text-[18px] text-white/80">chevron_right</span>
+                </button>
+              )}
 
               {/* 1. Travel Categories 2x2 Grid */}
               <div>

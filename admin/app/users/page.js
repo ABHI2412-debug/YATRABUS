@@ -1,30 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 
 // ── Mock Data ─────────────────────────────────────────────────────────────────
 
-const USERS = [
-  { id: "U10023", name: "Rahul Sharma",    email: "rahul.sharma@gmail.com",  phone: "+91 98765 43210", registered: "12 Jan 2025", bookings: 14, status: "Active",  color: "#4F46E5" },
-  { id: "U10024", name: "Sneha Patel",     email: "sneha.patel@gmail.com",   phone: "+91 87654 32109", registered: "08 Jan 2025", bookings: 8,  status: "Active",  color: "#D97706" },
-  { id: "U10025", name: "Amit Verma",      email: "amit.verma@outlook.com",  phone: "+91 76543 21098", registered: "05 Jan 2025", bookings: 3,  status: "Blocked", color: "#059669" },
-  { id: "U10026", name: "Priya Deshmukh",  email: "priya.d@email.com",       phone: "+91 99887 77665", registered: "03 Jan 2025", bookings: 12, status: "Active",  color: "#7C3AED" },
-  { id: "U10027", name: "Vikram Singh",    email: "vikram.singh@gmail.com",  phone: "+91 91234 56789", registered: "28 Dec 2024", bookings: 6,  status: "Active",  color: "#B91C1C" },
-  { id: "U10028", name: "Neha Gupta",      email: "neha.gupta@icloud.com",   phone: "+91 88776 65544", registered: "22 Dec 2024", bookings: 9,  status: "Blocked", color: "#0D9488" },
-  { id: "U10029", name: "Arjun Mehta",     email: "arjun.mehta@gmail.com",   phone: "+91 77665 44332", registered: "18 Dec 2024", bookings: 2,  status: "Active",  color: "#EA580C" },
-  { id: "U10030", name: "Kavya Nair",      email: "kavya.nair@email.com",    phone: "+91 99876 55443", registered: "12 Dec 2024", bookings: 5,  status: "Active",  color: "#DB2777" },
-  { id: "U10031", name: "Rohit Kulkarni",  email: "rohit.k@outlook.com",     phone: "+91 96655 44321", registered: "07 Dec 2024", bookings: 11, status: "Active",  color: "#2563EB" },
-  { id: "U10032", name: "Ananya Reddy",    email: "ananya.reddy@gmail.com",  phone: "+91 95544 33321", registered: "01 Dec 2024", bookings: 4,  status: "Blocked", color: "#9333EA" },
-];
-
-const STATS = [
-  { label: "Total Users",            value: "12,580", icon: "group",      bg: "#EEF2FF", color: "#4F46E5" },
-  { label: "Active Users",           value: "11,240", icon: "person",     bg: "#ECFDF5", color: "#059669", change: "+5.2%",  comp: "vs last month" },
-  { label: "Blocked Users",          value: "892",    icon: "person_off", bg: "#FEF2F2", color: "#DC2626" },
-  { label: "New Users (This Month)", value: "448",    icon: "person_add", bg: "#F5F3FF", color: "#7C3AED", change: "+12.6%", comp: "vs last month" },
-];
+// Real data is fetched in the component
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -81,27 +63,53 @@ function IconBtn({ icon, title, hoverColor = "#F1F5F9" }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function UsersPage() {
+  const [users, setUsers] = useState([]);
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
 
-  const filtered = USERS.filter((u) => {
+  useEffect(() => {
+    fetch("http://localhost:5000/api/users/all")
+      .then(res => res.json())
+      .then(data => {
+        const colors = ["#4F46E5", "#D97706", "#059669", "#7C3AED", "#B91C1C", "#0D9488", "#EA580C", "#DB2777"];
+        const mapped = data.map((u, i) => ({
+          ...u,
+          color: colors[i % colors.length],
+          registered: new Date(u.registered).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        }));
+        setUsers(mapped);
+      })
+      .catch(console.error);
+  }, []);
+
+  const filtered = users.filter((u) => {
     const matchFilter = filter === "All" || u.status === filter;
     const q = search.toLowerCase();
-    const matchSearch = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.phone.includes(q);
+    const matchSearch = !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.phone?.includes(q);
     return matchFilter && matchSearch;
   });
 
+  const activeCount = users.filter(u => u.status === "Active").length;
+  const blockedCount = users.filter(u => u.status === "Blocked").length;
+
   const toggleAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
+    if (selected.length === filtered.length && filtered.length > 0) setSelected([]);
     else setSelected(filtered.map((u) => u.id));
   };
   const toggleOne = (id) => setSelected((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
 
+  const STATS = [
+    { label: "Total Users",            value: users.length.toString(), icon: "group",      bg: "#EEF2FF", color: "#4F46E5" },
+    { label: "Active Users",           value: activeCount.toString(), icon: "person",     bg: "#ECFDF5", color: "#059669" },
+    { label: "Blocked Users",          value: blockedCount.toString(),    icon: "person_off", bg: "#FEF2F2", color: "#DC2626" },
+    { label: "New Users (This Month)", value: users.length.toString(),    icon: "person_add", bg: "#F5F3FF", color: "#7C3AED" },
+  ];
+
   const FILTERS = [
-    { label: `All (12,580)`,   key: "All" },
-    { label: `Active (11,240)`, key: "Active" },
-    { label: `Blocked (892)`,  key: "Blocked" },
+    { label: `All (${users.length})`,   key: "All" },
+    { label: `Active (${activeCount})`, key: "Active" },
+    { label: `Blocked (${blockedCount})`,  key: "Blocked" },
   ];
 
   const TH = { padding: "0.625rem 1rem", textAlign: "left", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.06em", color: "#94A3B8", textTransform: "uppercase", backgroundColor: "#F8FAFC", borderBottom: "1px solid #E2E8F0", whiteSpace: "nowrap" };
@@ -338,7 +346,7 @@ export default function UsersPage() {
           flexWrap: "wrap", gap: "0.75rem",
         }}>
           <span style={{ fontSize: "0.8125rem", color: "#64748B" }}>
-            Showing 1 to 10 of 12,580 users
+            Showing 1 to {filtered.length} of {users.length} users
           </span>
 
           <div style={{ display: "flex", alignItems: "center", gap: "0.375rem" }}>
@@ -359,7 +367,7 @@ export default function UsersPage() {
             ))}
 
             <span style={{ fontSize: "0.875rem", color: "#94A3B8", padding: "0 0.25rem" }}>...</span>
-            <button style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", color: "#475569", fontSize: "0.8125rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>1,258</button>
+            <button style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", color: "#475569", fontSize: "0.8125rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>{Math.ceil(users.length / 10) || 1}</button>
 
             {/* Next */}
             <button style={{ width: 30, height: 30, borderRadius: 6, border: "1px solid #E2E8F0", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B" }}>

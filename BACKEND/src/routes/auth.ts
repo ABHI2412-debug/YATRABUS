@@ -115,11 +115,74 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// Logout User
-router.post('/logout', (req: Request, res: Response): void => {
-  // In a stateless JWT setup, logout is primarily handled client-side by deleting tokens.
-  // We can just return success here.
-  res.json({ message: 'Logged out successfully. Please remove tokens on the client.' });
+// Check Phone Existence
+router.post('/check-phone', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      res.status(400).json({ error: 'Phone number is required' });
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+    const user = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+    res.json({ exists: !!user });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Login via Mobile OTP (Mocked Verification)
+router.post('/login-mobile', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { phone } = req.body;
+    const cleanPhone = phone.replace(/\D/g, '');
+    const user = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+    
+    if (!user) {
+      res.status(404).json({ error: 'User not found. Please sign up.' });
+      return;
+    }
+
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ 
+      message: 'Login successful', 
+      accessToken, 
+      user: { id: user.id, name: user.name, phone: user.phone, role: user.role } 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Register via Mobile OTP
+router.post('/register-mobile', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { name, email, phone } = req.body;
+    const cleanPhone = phone.replace(/\D/g, '');
+    
+    const existingUser = await prisma.user.findFirst({
+      where: { OR: [{ email }, { phone: cleanPhone }] }
+    });
+
+    if (existingUser) {
+      res.status(400).json({ error: 'User with this email or phone already exists' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash('dummy_mobile_password', 10);
+    const user = await prisma.user.create({
+      data: { name, email, phone: cleanPhone, passwordHash }
+    });
+
+    const accessToken = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      accessToken, 
+      user: { id: user.id, name: user.name, phone: user.phone, role: user.role } 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to register' });
+  }
 });
 
 export default router;

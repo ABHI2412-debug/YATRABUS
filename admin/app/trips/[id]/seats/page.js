@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 
@@ -60,10 +61,37 @@ const INITIAL_UPPER_SEATS = [
 ];
 
 export default function TripSeatMapPage() {
+  const params = useParams();
+  const tripId = params.id;
+
   const [activeDeck, setActiveDeck] = useState("lower"); // 'lower' | 'upper'
   const [lowerSeats, setLowerSeats] = useState(INITIAL_LOWER_SEATS);
   const [upperSeats, setUpperSeats] = useState(INITIAL_UPPER_SEATS);
   const [selectedSeat, setSelectedSeat] = useState(null);
+  const [tripData, setTripData] = useState(null);
+
+  useEffect(() => {
+    if (!tripId || tripId.startsWith("TRP")) return;
+    fetch(`http://localhost:5000/api/trips/${tripId}/seats`)
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setTripData(data);
+          // Map booked seats
+          const bookedMap = {};
+          if (data.bookings) {
+            data.bookings.forEach(b => {
+              b.seatNumbers.forEach(s => {
+                bookedMap[s] = { status: 'booked', user: b.user };
+              });
+            });
+          }
+          setLowerSeats(prev => prev.map(s => bookedMap[s.id] ? { ...s, status: 'booked', user: bookedMap[s.id].user } : s));
+          setUpperSeats(prev => prev.map(s => bookedMap[s.id] ? { ...s, status: 'booked', user: bookedMap[s.id].user } : s));
+        }
+      })
+      .catch(console.error);
+  }, [tripId]);
 
   const currentSeats = activeDeck === "lower" ? lowerSeats : upperSeats;
   const setCurrentSeats = activeDeck === "lower" ? setLowerSeats : setUpperSeats;
@@ -146,7 +174,7 @@ export default function TripSeatMapPage() {
         <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#94A3B8" }}>chevron_right</span>
         <Link href="/trips" style={{ color: "#64748B", textDecoration: "none" }}>Trips</Link>
         <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#94A3B8" }}>chevron_right</span>
-        <span style={{ color: "#64748B" }}>TRP1003</span>
+        <span style={{ color: "#64748B" }}>{tripId || "TRP1003"}</span>
         <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#94A3B8" }}>chevron_right</span>
         <span style={{ color: "#0F172A", fontWeight: 500 }}>Seat Map</span>
       </div>
@@ -155,10 +183,10 @@ export default function TripSeatMapPage() {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <div>
           <h1 style={{ fontFamily: "var(--font-playfair, 'Playfair Display')", fontSize: "1.875rem", fontWeight: 700, color: "#0F172A", lineHeight: 1.2, margin: 0 }}>
-            Seat Map — Nagpur → Pune
+            Seat Map — {tripData?.route?.originCity || 'Nagpur'} → {tripData?.route?.destinationCity || 'Pune'}
           </h1>
           <p style={{ fontSize: "0.875rem", color: "#64748B", marginTop: "0.375rem" }}>
-            15 Oct 2026 &nbsp;|&nbsp; Bus MH-31-VB-8899 &nbsp;|&nbsp; Volvo AC Sleeper (2+1) &nbsp;|&nbsp; 42 Seats (Lower: 20, Upper: 22)
+            {tripData ? new Date(tripData.departureDatetime).toLocaleDateString('en-GB') : '15 Oct 2026'} &nbsp;|&nbsp; Bus {tripData?.bus?.plateNumber || 'MH-31-VB-8899'} &nbsp;|&nbsp; {tripData?.bus?.type || 'Volvo AC Sleeper (2+1)'} &nbsp;|&nbsp; {tripData?.bus?.totalSeats || 42} Seats
           </p>
         </div>
         <Link href="/trips" style={{
@@ -366,24 +394,38 @@ export default function TripSeatMapPage() {
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
               {topRow.map(seat => {
                 const style = renderSeatContent(seat);
+                const userName = seat.user ? seat.user.name : null;
+                const userPhone = seat.user ? seat.user.phone : null;
                 return (
-                  <button
-                    key={seat.id}
-                    onClick={() => cycleStatus(seat.id)}
-                    title={`Seat ${seat.number} (${seat.status}) - Click to cycle status`}
-                    style={{
-                      width: 52, height: 58, borderRadius: 8,
-                      border: `1.5px solid ${style.border}`,
-                      backgroundColor: style.bg, color: style.color,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer", transition: "transform 100ms",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)", flexShrink: 0
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                  >
-                    {style.content}
-                  </button>
+                  <div key={seat.id} style={{ position: "relative" }} onMouseEnter={() => setSelectedSeat(seat.id)} onMouseLeave={() => setSelectedSeat(null)}>
+                    <button
+                      onClick={() => cycleStatus(seat.id)}
+                      title={`Seat ${seat.number} (${seat.status})`}
+                      style={{
+                        width: 52, height: 58, borderRadius: 8,
+                        border: `1.5px solid ${style.border}`,
+                        backgroundColor: style.bg, color: style.color,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", transition: "transform 100ms",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)", flexShrink: 0
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                      {style.content}
+                    </button>
+                    {selectedSeat === seat.id && userName && (
+                      <div style={{
+                        position: "absolute", bottom: "110%", left: "50%", transform: "translateX(-50%)",
+                        backgroundColor: "#0F172A", color: "#fff", padding: "0.5rem", borderRadius: "6px",
+                        fontSize: "0.75rem", whiteSpace: "nowrap", zIndex: 10, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                      }}>
+                        <div style={{ fontWeight: "bold" }}>{userName}</div>
+                        <div style={{ color: "#94A3B8" }}>{userPhone}</div>
+                        <div style={{ position: "absolute", bottom: "-4px", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "5px solid #0F172A" }}></div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -403,24 +445,38 @@ export default function TripSeatMapPage() {
             <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem" }}>
               {bottomRow.map(seat => {
                 const style = renderSeatContent(seat);
+                const userName = seat.user ? seat.user.name : null;
+                const userPhone = seat.user ? seat.user.phone : null;
                 return (
-                  <button
-                    key={seat.id}
-                    onClick={() => cycleStatus(seat.id)}
-                    title={`Seat ${seat.number} (${seat.status}) - Click to cycle status`}
-                    style={{
-                      width: 52, height: 58, borderRadius: 8,
-                      border: `1.5px solid ${style.border}`,
-                      backgroundColor: style.bg, color: style.color,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer", transition: "transform 100ms",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.06)", flexShrink: 0
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
-                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                  >
-                    {style.content}
-                  </button>
+                  <div key={seat.id} style={{ position: "relative" }} onMouseEnter={() => setSelectedSeat(seat.id)} onMouseLeave={() => setSelectedSeat(null)}>
+                    <button
+                      onClick={() => cycleStatus(seat.id)}
+                      title={`Seat ${seat.number} (${seat.status})`}
+                      style={{
+                        width: 52, height: 58, borderRadius: 8,
+                        border: `1.5px solid ${style.border}`,
+                        backgroundColor: style.bg, color: style.color,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        cursor: "pointer", transition: "transform 100ms",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.06)", flexShrink: 0
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"}
+                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                    >
+                      {style.content}
+                    </button>
+                    {selectedSeat === seat.id && userName && (
+                      <div style={{
+                        position: "absolute", top: "110%", left: "50%", transform: "translateX(-50%)",
+                        backgroundColor: "#0F172A", color: "#fff", padding: "0.5rem", borderRadius: "6px",
+                        fontSize: "0.75rem", whiteSpace: "nowrap", zIndex: 10, boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
+                      }}>
+                        <div style={{ position: "absolute", top: "-4px", left: "50%", transform: "translateX(-50%)", width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: "5px solid #0F172A" }}></div>
+                        <div style={{ fontWeight: "bold" }}>{userName}</div>
+                        <div style={{ color: "#94A3B8" }}>{userPhone}</div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

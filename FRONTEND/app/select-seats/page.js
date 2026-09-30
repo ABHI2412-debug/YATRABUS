@@ -173,6 +173,12 @@ function CinemaSeatBookingContent() {
 
   const handleProceedToCheckout = () => {
     if (selectedSeats.length === 0) return;
+
+    if (typeof window !== 'undefined' && !localStorage.getItem('token')) {
+      window.dispatchEvent(new Event('openAuthModal'));
+      return;
+    }
+
     const bookingPayload = {
       busId: busInfo.id,
       operator: busInfo.operator,

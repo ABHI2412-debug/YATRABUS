@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminShell from "@/components/layout/AdminShell";
 import DateRangePicker from "@/components/ui/DateRangePicker";
@@ -123,7 +123,51 @@ export default function TripsPage() {
 
   const clearFilters = () => { setDateFilter(""); setRouteFilter("All Routes"); setBusFilter("All Buses"); setStatusFilter("All Status"); };
 
-  const filtered = TRIPS.filter(t => {
+  const [dbTrips, setDbTrips] = useState([]);
+
+  useEffect(() => {
+    fetch('http://localhost:5000/api/trips')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mapped = data.map(t => {
+            const dateObj = new Date(t.departureDatetime);
+            const date = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const day = dateObj.toLocaleDateString('en-GB', { weekday: 'short' });
+            const time = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            let bookedSeats = 0;
+            if (t.bookings) {
+              t.bookings.forEach(b => {
+                if (b.status === 'Confirmed' || b.status === 'Pending') {
+                  bookedSeats += b.seatNumbers.length;
+                }
+              });
+            }
+            return {
+              id: t.id,
+              from: t.route?.originCity || '',
+              to: t.route?.destinationCity || '',
+              via: t.route?.waypoints?.join(', ') || '',
+              plate: t.bus?.plateNumber || '',
+              busType: t.bus?.type || '',
+              date: date,
+              day: day,
+              time: time,
+              avail: (t.bus?.totalSeats || 40) - bookedSeats,
+              total: t.bus?.totalSeats || 40,
+              status: t.status === 'On_Time' ? 'Ongoing' : t.status, // Map On_Time to Ongoing
+              busStyle: t.bus?.busStyle || 'silver'
+            };
+          });
+          setDbTrips(mapped);
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
+
+  const allTrips = [...dbTrips, ...TRIPS];
+
+  const filtered = allTrips.filter(t => {
     const matchStatus = statusFilter === "All Status" || t.status === statusFilter;
     return matchStatus;
   });
@@ -422,7 +466,7 @@ export default function TripsPage() {
 
           {/* Timeline Cards Grid */}
           <div style={{ display: "grid", gridTemplateColumns: opTimeframe === "day" ? "repeat(2, 1fr)" : "repeat(3, 1fr)", gap: "1rem" }}>
-            {TRIPS.slice(0, opTimeframe === "day" ? 6 : 9).map(trip => (
+            {allTrips.slice(0, opTimeframe === "day" ? 6 : 9).map(trip => (
               <div
                 key={trip.id}
                 style={{
